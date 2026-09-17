@@ -1,0 +1,36 @@
+# Virtual environments & dependencies
+venv/
+.venv/
+node_modules/
+frontend/node_modules/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases & logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Git & IDEs
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Documentation & artifacts
+brain/
+docs/
+*.md
+!README.md
+!RAILWAY_DEPLOY.md
