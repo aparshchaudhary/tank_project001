@@ -1,6 +1,6 @@
 # ==============================================================================
-# TURRET CBPM — Multi-Stage Railway / Production Dockerfile
-# Stage 1: Build React/TypeScript Frontend
+# TURRET CBPM — Multi-Stage Production Dockerfile (Render, Railway, Local)
+# Stage 1: Build React/TypeScript Frontend from frontend/
 # Stage 2: Fast, Slim Python 3.11 Backend Runner with embedded SPA frontend
 # ==============================================================================
 
@@ -8,9 +8,11 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 
-COPY frontend/package*.json ./
+# Copy frontend package manifests explicitly
+COPY frontend/package.json frontend/package-lock.json ./
 RUN npm install
 
+# Copy all frontend source files and build production bundle
 COPY frontend/ ./
 RUN npm run build
 
@@ -23,7 +25,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install system dependencies needed for compiling psycopg2 and image processing
+# Install system dependencies needed for compiling psycopg2 and healthchecks
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
@@ -40,12 +42,12 @@ COPY backend/app ./app
 # Copy built frontend assets from Stage 1 into /app/static
 COPY --from=frontend-builder /app/frontend/dist ./static
 
-# Expose dynamic PORT
-EXPOSE 8000
+# Expose ports (8000 for Railway/local, 10000 for Render)
+EXPOSE 8000 10000
 
 # Healthcheck targeting the FastAPI /healthz endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD curl -f http://127.0.0.1:${PORT:-8000}/healthz || exit 1
 
-# Launch FastAPI app with dynamic Railway PORT variable
+# Launch FastAPI app with dynamic PORT variable
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
