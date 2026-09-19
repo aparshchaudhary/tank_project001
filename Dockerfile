@@ -4,16 +4,16 @@
 # Stage 2: Fast, Slim Python 3.11 Backend Runner with embedded SPA frontend
 # ==============================================================================
 
-# Stage 1: Frontend Build
+# Stage 1: Build React/TypeScript Frontend
 FROM node:20-alpine AS frontend-builder
+WORKDIR /app
+
+# Copy entire frontend directory from build context
+COPY frontend ./frontend
+
+# Install dependencies and build production assets into /app/frontend/dist
 WORKDIR /app/frontend
-
-# Copy frontend package manifests explicitly
-COPY frontend/package.json frontend/package-lock.json ./
 RUN npm install
-
-# Copy all frontend source files and build production bundle
-COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Production Python Runner
