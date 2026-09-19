@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.all_models import Subsystem, HealthIndexRecord, BaselineSignature
