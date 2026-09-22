@@ -73,62 +73,74 @@ def seed_database():
             db.add_all(models)
             db.commit()
 
-        # 3. Seed Subsystems and Sensors
-        if db.query(Subsystem).count() == 0:
+        # 3. Seed Subsystems and Sensors (auto-migrate if old subsystem codes exist)
+        needs_seed = db.query(Subsystem).count() == 0 or db.query(Subsystem).filter(Subsystem.code == "TURRET_DRIVE").first() is not None
+        if needs_seed:
+            # Clear old records if migrating from previous schema
+            if db.query(Subsystem).filter(Subsystem.code == "TURRET_DRIVE").first() is not None:
+                db.query(Alert).delete()
+                db.query(MaintenanceEvent).delete()
+                db.query(AnomalyEvent).delete()
+                db.query(HealthIndexRecord).delete()
+                db.query(BaselineSignature).delete()
+                db.query(SensorChannel).delete()
+                db.query(Subsystem).delete()
+                db.commit()
+
             subsystems_meta = [
                 {
-                    "code": "TURRET_DRIVE",
-                    "name": "Turret Azimuth Drive Subsystem",
-                    "category": "Mechanical / Electric",
-                    "description": "High-torque electric azimuth slew drive gear train and support casing.",
-                    "hours": 342.5,
-                    "cycles": 12800,
-                    "initial_hi": 94.5
+                    "code": "LRF",
+                    "name": "Laser Range Finder (LRF)",
+                    "category": "Electro-Optical",
+                    "description": "Precision laser range determination, detector voltage monitoring (10.5-12.5V), and optical path health.",
+                    "hours": 280.0,
+                    "cycles": 9500,
+                    "initial_hi": 96.5
                 },
                 {
-                    "code": "GEARBOX",
-                    "name": "Main Reduction Gearbox",
-                    "category": "Mechanical",
-                    "description": "High-ratio precision planetary gearbox linking azimuth servo to ring gear.",
-                    "hours": 342.5,
-                    "cycles": 12800,
-                    "initial_hi": 88.2
+                    "code": "ALG",
+                    "name": "Automatic Loader & Gun System (ALG)",
+                    "category": "Mechanical / Electrical",
+                    "description": "Autoloader sequencing, circuit serviceability checks, and 6-microswitch operational verification.",
+                    "hours": 310.0,
+                    "cycles": 11200,
+                    "initial_hi": 94.0
                 },
                 {
-                    "code": "MOTOR",
-                    "name": "Azimuth Servo Motor",
+                    "code": "RECOIL",
+                    "name": "Recoil Mechanism Subsystem",
+                    "category": "Hydraulic / Mechanical",
+                    "description": "Dynamic recoil buffer cylinder, stroke distance (mm), buffer speed, cycle duration, and oil reservoir level.",
+                    "hours": 195.0,
+                    "cycles": 5800,
+                    "initial_hi": 88.5
+                },
+                {
+                    "code": "ELEVATION",
+                    "name": "Elevation Drive Subsystem",
+                    "category": "Electro-Hydraulic",
+                    "description": "Gun elevation drive, K1 relay voltage (25-40V), power supply mount voltage (25-40V), and cylinder pressure (10-200 MPa).",
+                    "hours": 340.0,
+                    "cycles": 12400,
+                    "initial_hi": 91.5
+                },
+                {
+                    "code": "AZIMUTH",
+                    "name": "Azimuth / Turret Drive Subsystem",
+                    "category": "Electrical / Mechanical",
+                    "description": "Turret rotational slew assembly, K1 contactor voltage (25-40V), MP9 voltage (25-40V), and motor voltage (25-40V).",
+                    "hours": 340.0,
+                    "cycles": 12400,
+                    "initial_hi": 93.0
+                },
+                {
+                    "code": "TRAVERSE",
+                    "name": "Traverse Drive Subsystem",
                     "category": "Electrical",
-                    "description": "Permanent magnet synchronous drive motor with integral thermal feedback.",
-                    "hours": 342.5,
-                    "cycles": 12800,
-                    "initial_hi": 91.0
-                },
-                {
-                    "code": "HYDRAULIC_UNIT",
-                    "name": "Hydraulic Elevation & Recoil Buffer",
-                    "category": "Hydraulic",
-                    "description": "Auxiliary laboratory test-bench elevation cylinder and damping accumulator.",
-                    "hours": 210.0,
-                    "cycles": 6450,
-                    "initial_hi": 78.5
-                },
-                {
-                    "code": "POSITION_SYSTEM",
-                    "name": "Dual Resolver & Encoder System",
-                    "category": "Sensor / Instrumentation",
-                    "description": "Optical absolute encoder and high-frequency inductive position resolver.",
-                    "hours": 342.5,
-                    "cycles": 12800,
-                    "initial_hi": 96.0
-                },
-                {
-                    "code": "BEARING_SYSTEM",
-                    "name": "Main Turret Ring & Race Bearing",
-                    "category": "Mechanical",
-                    "description": "Large diameter ball race bearing accommodating slew axial and radial loads.",
-                    "hours": 342.5,
-                    "cycles": 12800,
-                    "initial_hi": 72.0 # In early degradation for rich demo
+                    "description": "Traverse tracking drive servo motor and electrical bus voltage regulation (25-40V).",
+                    "hours": 260.0,
+                    "cycles": 8900,
+                    "initial_hi": 95.0
                 }
             ]
 
@@ -187,12 +199,9 @@ def seed_database():
                 for i in range(30, 0, -1):
                     hist_time = now - timedelta(hours=i * 0.8)
                     # Slight random walk
-                    jitter = random.gauss(0, 0.6)
-                    # For Bearing System, introduce a slight downward degradation curve to showcase RUL & trends!
-                    if code == "BEARING_SYSTEM":
-                        hi_point = max(65.0, min(100.0, 92.0 - (30 - i) * 0.7 + jitter))
-                    elif code == "HYDRAULIC_UNIT":
-                        hi_point = max(70.0, min(100.0, 85.0 - (30 - i) * 0.25 + jitter))
+                    jitter = random.gauss(0, 0.5)
+                    if code == "RECOIL":
+                        hi_point = max(75.0, min(100.0, 94.0 - (30 - i) * 0.2 + jitter))
                     else:
                         hi_point = max(88.0, min(100.0, base_hi + jitter))
 
@@ -217,73 +226,71 @@ def seed_database():
             db.commit()
 
             # 4. Seed Alerts, Anomalies, and Maintenance events for rich initial visualization
-            bearing_sub = db.query(Subsystem).filter(Subsystem.code == "BEARING_SYSTEM").first()
-            hydraulic_sub = db.query(Subsystem).filter(Subsystem.code == "HYDRAULIC_UNIT").first()
+            recoil_sub = db.query(Subsystem).filter(Subsystem.code == "RECOIL").first()
+            lrf_sub = db.query(Subsystem).filter(Subsystem.code == "LRF").first()
             tech_user = db.query(User).filter(User.username == "tech").first()
             admin_user = db.query(User).filter(User.username == "admin").first()
 
-            if bearing_sub and tech_user:
-                # Anomaly & Alert for Bearing
+            if recoil_sub and tech_user:
                 anom1 = AnomalyEvent(
-                    subsystem_id=bearing_sub.id,
-                    feature_name="vibration_rms",
-                    timestamp=now - timedelta(hours=3),
+                    subsystem_id=recoil_sub.id,
+                    feature_name="recoil_distance",
+                    timestamp=now - timedelta(hours=2),
                     severity="WARNING",
-                    anomaly_score=0.68,
-                    deviation_value=0.22,
-                    detection_method="k-sigma statistical deviation",
-                    model_version="Statistical-kSigma-v1.0",
-                    fault_diagnosis="Bearing Raceway Defect / Impact Shock",
-                    raw_context={"current_value": 1.15, "baseline_mean": 0.65, "k_sigma": 3.0}
+                    anomaly_score=0.62,
+                    deviation_value=312.0,
+                    detection_method="Threshold Range Check (300-350 mm)",
+                    model_version="Threshold-v1.0",
+                    fault_diagnosis="Recoil Travel Warning (300-350 mm)",
+                    raw_context={"current_value": 312.0, "unit": "mm", "normal_range": "250-300 mm"}
                 )
                 db.add(anom1)
                 db.flush()
 
                 alert1 = Alert(
-                    subsystem_id=bearing_sub.id,
-                    feature_name="vibration_rms",
-                    timestamp=now - timedelta(hours=3),
+                    subsystem_id=recoil_sub.id,
+                    feature_name="recoil_distance",
+                    timestamp=now - timedelta(hours=2),
                     severity="WARNING",
-                    current_value=1.15,
-                    baseline_value=0.65,
-                    health_index_snapshot=74.2,
-                    probable_issue="Elevated vibration RMS and crest factor in main ring bearing race.",
-                    detection_method="Statistical Threshold Engine",
+                    current_value=312.0,
+                    baseline_value=275.0,
+                    health_index_snapshot=88.5,
+                    probable_issue="Recoil distance reading 312.0 mm extended into warning threshold band (300-350 mm).",
+                    detection_method="Recoil Stroke Threshold Engine",
                     status="ACTIVE",
-                    notes="Awaiting visual inspection and grease sampling."
+                    notes="Awaiting damper fluid and buffer seal inspection."
                 )
                 db.add(alert1)
 
-                # Maintenance Event
                 maint1 = MaintenanceEvent(
-                    subsystem_id=bearing_sub.id,
+                    subsystem_id=recoil_sub.id,
                     anomaly_id=anom1.id,
                     event_type="INSPECTION",
-                    description="Scheduled visual inspection and grease contaminant check on bearing race.",
+                    description="Scheduled recoil buffer stroke measurement and oil level inspection.",
                     technician_id=tech_user.id,
-                    operating_hours=bearing_sub.operating_hours,
-                    operating_cycles=bearing_sub.operating_cycles,
-                    maintenance_priority="HIGH",
-                    recommendations="Inspect monitored subsystem. Verify race seal integrity and relubricate with certified synthetic grease.",
-                    created_at=now - timedelta(hours=2)
+                    operating_hours=recoil_sub.operating_hours,
+                    operating_cycles=recoil_sub.operating_cycles,
+                    maintenance_priority="MEDIUM",
+                    recommendations="Inspect recoil buffer cylinder seals. Verify oil level in accumulator and confirm return stroke duration.",
+                    created_at=now - timedelta(hours=1)
                 )
                 db.add(maint1)
 
-            if hydraulic_sub and admin_user:
+            if lrf_sub and admin_user:
                 alert2 = Alert(
-                    subsystem_id=hydraulic_sub.id,
-                    feature_name="hydraulic_pressure_variation",
-                    timestamp=now - timedelta(hours=5),
+                    subsystem_id=lrf_sub.id,
+                    feature_name="detector_voltage",
+                    timestamp=now - timedelta(hours=4),
                     severity="WARNING",
-                    current_value=8.2,
-                    baseline_value=4.5,
-                    health_index_snapshot=78.5,
-                    probable_issue="Pressure fluctuation ripple in elevation cylinder circuit.",
-                    detection_method="Statistical Threshold Engine",
+                    current_value=10.85,
+                    baseline_value=11.5,
+                    health_index_snapshot=93.2,
+                    probable_issue="LRF detector voltage at 10.85 V entered low warning band (10.5-11.0 V).",
+                    detection_method="Voltage Threshold Engine",
                     status="ACKNOWLEDGED",
                     acknowledged_by_id=tech_user.id if tech_user else None,
-                    acknowledged_at=now - timedelta(hours=4),
-                    notes="Acknowledged by technician. Pressure accumulator pre-charge will be tested."
+                    acknowledged_at=now - timedelta(hours=3),
+                    notes="Acknowledged by technician. Power converter rail ripple to be verified."
                 )
                 db.add(alert2)
 

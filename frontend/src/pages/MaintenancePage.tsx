@@ -39,6 +39,78 @@ export const MaintenancePage: React.FC = () => {
 
   const canCreate = role === 'TECHNICIAN' || role === 'ADMIN';
 
+  const [activeSubhead, setActiveSubhead] = useState<string>('RECOIL');
+
+  const MAINTENANCE_SUBHEADS = [
+    {
+      id: 'RECOIL',
+      code: '1. Recoil',
+      name: 'Recoil',
+      title: 'Recoil Mechanism Maintenance Sub-Head',
+      description: 'Dynamic recoil buffer cylinder seals, stroke length calibration (250-300 mm normal), damper fluid reservoir level, and return timing.',
+      points: [
+        'Inspect dynamic stroke travel: Normal (250-300 mm), Warning (300-350 mm), Critical Alert (>350 mm).',
+        'Verify buffer cylinder hydraulic fluid reservoir: maintain >85% capacity.',
+        'Evaluate buffer piston velocity (nominal: 1.85 m/s) and return cycle time (0.32 s).',
+        'Specific maintenance inspection points & scoring values to be configured later (TBD).',
+      ],
+    },
+    {
+      id: 'LRF',
+      code: '2. LRF',
+      name: 'LRF',
+      title: 'Laser Range Finder Maintenance Sub-Head',
+      description: 'Detector electrical voltage check (10.5-12.5V band), optical path cleanliness, and BITE range counter verification.',
+      points: [
+        'Verify detector supply voltage within 10.5–12.5 V (Nominal: 11.0–12.0 V). Displayed strictly in V, not Amps.',
+        'Clean optoelectronic transmitter window and inspect beam collimation path.',
+        'Execute BITE self-test routine and verify range discriminator calibration.',
+        'Specific maintenance inspection points & scoring values to be configured later (TBD).',
+      ],
+    },
+    {
+      id: 'AZIMUTH',
+      code: '3. Azimuth',
+      name: 'Azimuth',
+      title: 'Azimuth / Turret Drive Maintenance Sub-Head',
+      description: 'Slew drive motor voltage (25-40V), K1 contactor inspection, MP9 rail distribution, and race bearing lubrication.',
+      points: [
+        'Verify K1 contactor and MP9 distribution rail voltages within 25–40 V normal band (in V, not Amps).',
+        'Measure actuating motor operating terminal voltage under 360-degree slew load.',
+        'Inspect turret ring race seals and sample lubricant grease for particulate wear.',
+        'Specific maintenance inspection points & scoring values to be configured later (TBD).',
+      ],
+    },
+    {
+      id: 'TRAVERSE',
+      code: '4. Traverse',
+      name: 'Traverse',
+      title: 'Traverse Drive Maintenance Sub-Head',
+      description: 'Traverse servomotor voltage (25-40V), fine-tracking gear backlash, and electrical rail condition.',
+      points: [
+        'Verify traverse drive electrical bus voltage within 25–40 V normal range (in V, not Amps).',
+        'Check fine-tracking gear drive backlash and harmonic drive clearance.',
+        'Test servomotor brush/commutator wear and emergency mechanical stop switches.',
+        'Specific maintenance inspection points & scoring values to be configured later (TBD).',
+      ],
+    },
+    {
+      id: 'ALG',
+      code: '5. ALG',
+      name: 'ALG',
+      title: 'Automatic Loader & Gun System Maintenance Sub-Head',
+      description: 'Circuit serviceability check, 6-microswitch contact inspection, and operating current verification.',
+      points: [
+        'Perform circuit serviceability continuity check through the autoloader sequencing harness.',
+        'Inspect 6 critical microswitches: RC, CLM, Rammer, CBDM, CBDD, Gun Motor Lock.',
+        'Operating current thresholds and actuation points: Configurable / TBD (pending values).',
+        'Specific maintenance inspection points & scoring values to be configured later (TBD).',
+      ],
+    },
+  ];
+
+  const currentSubhead = MAINTENANCE_SUBHEADS.find((s) => s.id === activeSubhead) || MAINTENANCE_SUBHEADS[0];
+
   return (
     <div className="space-y-6 font-mono text-xs">
       {/* Header */}
@@ -46,7 +118,7 @@ export const MaintenancePage: React.FC = () => {
         <div>
           <h1 className="text-base font-bold text-slate-100 uppercase tracking-wider flex items-center gap-2">
             <Wrench className="w-5 h-5 text-amber-400" />
-            MAINTENANCE DECISION-SUPPORT & SERVICE LOGS
+            MAINTENANCE DECISION-SUPPORT &amp; SERVICE LOGS
           </h1>
           <p className="text-slate-400 mt-1">
             Component replacement records, preventive inspection actions, lubrication schedules, and safe maintenance recommendations.
@@ -88,6 +160,62 @@ export const MaintenancePage: React.FC = () => {
           <span className="text-slate-300">
             Recommendations are strictly restricted to mechanical, electrical, and hydraulic inspection, lubrication, and re-baselining. No operational weapon or tactical actions are permitted through this platform.
           </span>
+        </div>
+      </div>
+
+      {/* 5 Maintenance Sub-Heads Section (Section 11) */}
+      <div className="bg-defense-900 border border-defense-700/80 rounded-lg p-4">
+        <div className="flex items-center justify-between pb-3 border-b border-defense-800 mb-3">
+          <div className="flex items-center gap-2 text-cyan-400 font-bold uppercase tracking-wider">
+            <Wrench className="w-4 h-4" />
+            <span>MAINTENANCE SUB-HEADS (STRUCTURE &amp; PROTOCOLS)</span>
+          </div>
+          <span className="text-[11px] text-slate-400">
+            Click sub-head to inspect servicing directives (Values Configurable / TBD)
+          </span>
+        </div>
+
+        {/* 5 Sub-head Tab Buttons */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-4">
+          {MAINTENANCE_SUBHEADS.map((sh) => (
+            <button
+              key={sh.id}
+              onClick={() => setActiveSubhead(sh.id)}
+              className={`p-2.5 rounded text-left transition-all border ${
+                activeSubhead === sh.id
+                  ? 'bg-cyan-950/60 border-cyan-500 text-cyan-200 shadow-sm'
+                  : 'bg-defense-950 border-defense-800 text-slate-400 hover:text-slate-200 hover:border-defense-700'
+              }`}
+            >
+              <div className="text-[10px] uppercase font-bold text-cyan-400">{sh.code}</div>
+              <div className="font-semibold text-xs text-slate-100 mt-0.5">{sh.name}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* Selected Sub-Head Details Box */}
+        <div className="bg-defense-950 p-4 rounded border border-defense-800">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-defense-850">
+            <h3 className="font-bold text-slate-100 text-sm">{currentSubhead.title}</h3>
+            <span className="text-[10px] bg-amber-950/60 text-amber-400 px-2 py-0.5 rounded border border-amber-800">
+              Detailed Points / Scoring Values: Configurable / TBD
+            </span>
+          </div>
+          <p className="text-slate-300 text-xs mt-2 leading-relaxed">{currentSubhead.description}</p>
+
+          <div className="mt-3">
+            <span className="text-[11px] text-slate-400 uppercase tracking-wider block mb-1.5">
+              Current Servicing Checkpoints:
+            </span>
+            <ul className="space-y-1.5">
+              {currentSubhead.points.map((pt, idx) => (
+                <li key={idx} className="flex items-start gap-2 text-[11px] text-slate-300">
+                  <span className="text-cyan-400 font-bold">•</span>
+                  <span>{pt}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
 

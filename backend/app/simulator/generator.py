@@ -54,68 +54,65 @@ class SyntheticDataGenerator:
                     val = 0.0 # Stuck at zero
 
         elif scenario == SimulationScenario.B_MOTOR_DEGRADATION or scenario == "B. MOTOR DEGRADATION":
-            if subsystem_code == "MOTOR":
-                if "current" in feature_name:
-                    val += fault_severity * 18.5 + (fault_severity * 4.0 * math.sin(2.0 * math.pi * 1.5 * t))
-                elif "temperature" in feature_name:
-                    val += fault_severity * 38.0
-                elif "speed_deviation" in feature_name:
-                    val += fault_severity * 1.8
+            if subsystem_code in ["AZIMUTH", "ELEVATION", "TRAVERSE"]:
+                if "voltage" in feature_name:
+                    # Voltage drop / fluctuation outside ideal 25-40V band
+                    val -= fault_severity * 12.0 + (fault_severity * 3.0 * math.sin(2.0 * math.pi * 1.5 * t))
 
         elif scenario == SimulationScenario.C_GEARBOX_ANOMALY or scenario == "C. GEARBOX/VIBRATION ANOMALY":
-            if subsystem_code == "GEARBOX":
-                if "vibration" in feature_name:
-                    val += fault_severity * 4.8 + (fault_severity * 2.2 * math.sin(2.0 * math.pi * 5.0 * t))
-                elif "temperature" in feature_name:
-                    val += fault_severity * 22.0
+            if subsystem_code == "LRF" and "detector_voltage" in feature_name:
+                # Trip LRF voltage outside nominal 11.0-12.0V band into warning/alert
+                val += fault_severity * 1.8 * math.sin(2.0 * math.pi * 0.5 * t)
 
         elif scenario == SimulationScenario.D_BEARING_DEGRADATION or scenario == "D. BEARING DEGRADATION":
-            if subsystem_code == "BEARING_SYSTEM" or subsystem_code == "TURRET_DRIVE":
-                if "crest_factor" in feature_name:
-                    val += fault_severity * 3.2
-                elif "vibration" in feature_name:
-                    # High frequency intermittent impact shocks
-                    shock = 5.0 * fault_severity if random.random() < 0.20 else 0.0
-                    val += fault_severity * 3.5 + shock
+            if subsystem_code == "RECOIL":
+                if feature_name == "recoil_distance":
+                    val += fault_severity * 85.0 # Extends distance into 300-350 (warning) and >350 (critical)
+                elif feature_name == "recoil_speed":
+                    val += fault_severity * 0.8
+            elif subsystem_code == "AZIMUTH" and "voltage" in feature_name:
+                val -= fault_severity * 9.0
 
         elif scenario == SimulationScenario.E_HYDRAULIC_ANOMALY or scenario == "E. HYDRAULIC PRESSURE ANOMALY":
-            if subsystem_code == "HYDRAULIC_UNIT":
-                if "hydraulic_pressure_variation" in feature_name:
-                    val += fault_severity * 18.0 + (fault_severity * 6.0 * math.sin(2.0 * math.pi * 3.2 * t))
-                elif "flow_deviation" in feature_name:
-                    val += fault_severity * 5.5
-                elif "pressure" in feature_name:
-                    val -= fault_severity * 45.0 # pressure loss
+            if subsystem_code == "RECOIL":
+                if feature_name == "recoil_distance":
+                    val += fault_severity * 95.0 # Extends distance > 350 mm
+                elif feature_name == "oil_level":
+                    val -= fault_severity * 35.0 # Low oil level
+            elif subsystem_code == "ELEVATION" and feature_name == "hydraulic_pressure":
+                val -= fault_severity * 75.0 # Pressure drops toward/below 10 MPa
 
         elif scenario == SimulationScenario.F_POSITION_ERROR or scenario == "F. POSITION ERROR":
-            if subsystem_code == "POSITION_SYSTEM":
-                if "position_error" in feature_name:
-                    val += fault_severity * 0.08
-                elif "overshoot" in feature_name:
-                    val += fault_severity * 0.12
-                elif "movement_time" in feature_name:
-                    val += fault_severity * 1.5
+            if subsystem_code == "ALG":
+                if "microswitch" in feature_name or "circuit" in feature_name:
+                    if fault_severity > 0.5:
+                        val = 0.0 # Open circuit / switch fault
+            elif subsystem_code in ["AZIMUTH", "ELEVATION"]:
+                if "voltage" in feature_name:
+                    val -= fault_severity * 8.0
 
         elif scenario == SimulationScenario.G_TEMPERATURE_RISE or scenario == "G. TEMPERATURE RISE":
-            if "temperature" in feature_name:
-                val += fault_severity * 42.0
+            if "voltage" in feature_name:
+                val -= fault_severity * 6.0
 
         elif scenario == SimulationScenario.J_MULTIPLE_ANOMALIES or scenario == "J. MULTIPLE SIMULTANEOUS ANOMALIES":
             # Compounded anomalies
-            if "vibration" in feature_name:
-                val += fault_severity * 4.0
-            if "current" in feature_name:
-                val += fault_severity * 12.0
-            if "temperature" in feature_name:
-                val += fault_severity * 32.0
-            if "pressure_variation" in feature_name:
-                val += fault_severity * 14.0
+            if subsystem_code == "RECOIL" and feature_name == "recoil_distance":
+                val += fault_severity * 90.0
+            if subsystem_code == "LRF" and feature_name == "detector_voltage":
+                val += fault_severity * 1.6
+            if "voltage" in feature_name:
+                val -= fault_severity * 10.0
+            if "pressure" in feature_name:
+                val -= fault_severity * 60.0
 
         # Boundary checks
-        if "crest_factor" in feature_name and val < 1.0:
-            val = 1.05
-        if "rms" in feature_name and val < 0.0:
-            val = 0.01
+        if "voltage" in feature_name and val < 0.0:
+            val = 0.0
+        if "distance" in feature_name and val < 0.0:
+            val = 0.0
+        if "oil_level" in feature_name:
+            val = max(0.0, min(100.0, val))
 
         return {
             "reading_id": f"SIM_{uuid.uuid4().hex[:12]}",

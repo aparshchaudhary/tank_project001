@@ -18,6 +18,9 @@ def get_system_overview(db: Session = Depends(get_db)):
     warnings = [a for a in active_alerts if a.severity == "WARNING"]
     criticals = [a for a in active_alerts if a.severity == "CRITICAL"]
 
+    SUBSYSTEM_ORDER = ["LRF", "ALG", "RECOIL", "ELEVATION", "AZIMUTH", "TRAVERSE"]
+    subsystems.sort(key=lambda s: SUBSYSTEM_ORDER.index(s.code) if s.code in SUBSYSTEM_ORDER else 99)
+
     subsystems_responses = []
     healthy_count = 0
     degrading_count = 0

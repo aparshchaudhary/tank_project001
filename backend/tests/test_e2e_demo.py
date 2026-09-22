@@ -16,7 +16,7 @@ def test_complete_end_to_end_demo_flow():
     db = SessionLocal()
     try:
         # Step 1: Start healthy simulation & inspect healthy baseline
-        sub = db.query(Subsystem).filter(Subsystem.code == "GEARBOX").first()
+        sub = db.query(Subsystem).filter(Subsystem.code == "RECOIL").first()
         assert sub is not None
         sub.current_health_index = 88.2
         db.commit()
@@ -25,24 +25,25 @@ def test_complete_end_to_end_demo_flow():
         # Step 2 & 3: Establish healthy baselines
         baselines = baseline_engine.get_active_baselines(db, sub.id)
         assert len(baselines) > 0
-        v_base = baselines.get("vibration_rms")
-        assert v_base is not None
+        r_base = baselines.get("recoil_distance")
+        assert r_base is not None
 
-        # Step 4: Introduce controlled simulated fault (Elevated vibration)
-        fault_vibration_val = v_base.baseline_mean + 4.5 * v_base.baseline_stddev # > 3 sigma
+        # Step 4: Introduce controlled simulated fault (Excessive recoil stroke > 350 mm)
+        fault_recoil_val = 362.0  # > 350 mm CRITICAL
         all_features = {
-            "vibration_rms": fault_vibration_val,
-            "vibration_peak_to_peak": 8.5,
-            "temperature": 55.0
+            "recoil_distance": fault_recoil_val,
+            "recoil_speed": 2.1,
+            "recoil_time": 0.38,
+            "oil_level": 85.0
         }
 
         # Step 5: Detect Anomaly
         anomaly = anomaly_detector.evaluate_feature(
             subsystem_id=sub.id,
             subsystem_code=sub.code,
-            feature_name="vibration_rms",
-            current_value=fault_vibration_val,
-            baseline=v_base,
+            feature_name="recoil_distance",
+            current_value=fault_recoil_val,
+            baseline=r_base,
             all_features=all_features
         )
         assert anomaly is not None
@@ -60,15 +61,15 @@ def test_complete_end_to_end_demo_flow():
         assert status_band in ["DEGRADING", "SIGNIFICANT DEGRADATION", "SEVERE CONDITION", "NORMAL / EARLY DEVIATION"]
 
         # Step 7 & 8: Generate Warning / Critical Alert
-        db.query(Alert).filter(Alert.subsystem_id == sub.id, Alert.feature_name == "vibration_rms").delete()
+        db.query(Alert).filter(Alert.subsystem_id == sub.id, Alert.feature_name == "recoil_distance").delete()
         db.commit()
         alert = alert_service.trigger_or_update_alert(
             db=db,
             subsystem_id=sub.id,
-            feature_name="vibration_rms",
+            feature_name="recoil_distance",
             severity=anomaly.severity,
-            current_value=fault_vibration_val,
-            baseline_value=v_base.baseline_mean,
+            current_value=fault_recoil_val,
+            baseline_value=r_base.baseline_mean,
             health_index_snapshot=hi,
             probable_issue=anomaly.fault_diagnosis
         )
@@ -81,7 +82,7 @@ def test_complete_end_to_end_demo_flow():
             db=db,
             alert_id=alert.id,
             user=tech_user,
-            notes="Acknowledged in test bench. Vibration analyzer connected."
+            notes="Acknowledged in test bench. Recoil buffer inspection scheduled."
         )
         assert acked.status == "ACKNOWLEDGED"
 
@@ -91,7 +92,7 @@ def test_complete_end_to_end_demo_flow():
             subsystem_id=sub.id,
             user=tech_user,
             event_type="INSPECTION",
-            description="Verified gearbox backlash and gear tooth condition.",
+            description="Verified recoil buffer stroke length and nitrogen replenishment.",
             anomaly_id=anomaly.id,
             maintenance_priority="HIGH"
         )

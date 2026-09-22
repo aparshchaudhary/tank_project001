@@ -41,6 +41,52 @@ class AnomalyDetector:
         if deviation_score < settings.ANOMALY_WARNING_THRESHOLD:
             return "NORMAL OPERATION"
 
+        # Recoil subsystem rules
+        if subsystem_code == "RECOIL" or feature_name.startswith("recoil"):
+            r_dist = all_features.get("recoil_distance", 0.0)
+            r_oil = all_features.get("oil_level", 100.0)
+            if r_dist > 350.0:
+                return "Recoil Buffer Critical Extension (>350 mm)"
+            elif r_dist > 300.0:
+                return "Recoil Travel Warning (300-350 mm)"
+            elif 0.0 < r_dist < 250.0:
+                return "Recoil Distance Below Minimum Range (<250 mm)"
+            elif r_oil < 80.0:
+                return "Recoil Damper Reservoir Low Fluid Level"
+
+        # LRF subsystem rules
+        if subsystem_code == "LRF" or "detector_voltage" in feature_name:
+            v_det = all_features.get("detector_voltage", current_val if "current_val" in locals() else 11.5)
+            if v_det < 10.5:
+                return "LRF Detector Voltage Undervoltage Alert (<10.5 V)"
+            elif v_det > 12.5:
+                return "LRF Detector Voltage Overvoltage Critical Alert (>12.5 V)"
+            elif (10.5 <= v_det < 11.0) or (12.0 < v_det <= 12.5):
+                return "LRF Detector Voltage Warning Band (Marginal 10.5-11V / 12-12.5V)"
+
+        # Elevation subsystem rules
+        if subsystem_code == "ELEVATION":
+            press = all_features.get("hydraulic_pressure", 125.0)
+            if press < 10.0 or press > 200.0:
+                return "Elevation Hydraulic Actuator Fluid Pressure Out of Range (10-200 MPa)"
+            if "voltage" in feature_name:
+                return "Elevation Slew Voltage Out of Ideal 25-40V Range"
+
+        # Azimuth subsystem rules
+        if subsystem_code == "AZIMUTH" and "voltage" in feature_name:
+            return "Azimuth Drive Contactor / Bus Voltage Out of Ideal 25-40V Range"
+
+        # Traverse subsystem rules
+        if subsystem_code == "TRAVERSE" and "voltage" in feature_name:
+            return "Traverse Drive Voltage Out of Ideal 25-40V Range"
+
+        # ALG subsystem rules
+        if subsystem_code == "ALG":
+            if feature_name == "circuit_serviceability":
+                return "ALG Circuit Serviceability Open Loop / Interrupted"
+            if "microswitch" in feature_name:
+                return "ALG Microswitch Operating Contact Failure"
+
         # Bearing subsystem rules
         if "BEARING" in subsystem_code or feature_name.startswith("vibration"):
             v_rms = all_features.get("vibration_rms", 0.0)
@@ -97,6 +143,37 @@ class AnomalyDetector:
 
         dev_score, raw_dev = self.compute_deviation(current_value, baseline)
         severity = self.determine_severity(dev_score)
+
+        # Domain-specific threshold overrides per system specification
+        if feature_name == "recoil_distance":
+            if 250.0 <= current_value <= 300.0:
+                severity = "NORMAL"
+            elif 300.0 < current_value <= 350.0:
+                severity = "WARNING"
+            elif current_value > 350.0:
+                severity = "CRITICAL"
+            elif current_value < 250.0:
+                severity = "WARNING" # Out of range safe handling
+        elif feature_name in ["detector_voltage", "lrf_voltage"]:
+            if 11.0 <= current_value <= 12.0:
+                severity = "NORMAL"
+            elif (10.5 <= current_value < 11.0) or (12.0 < current_value <= 12.5):
+                severity = "WARNING"
+            else:
+                severity = "CRITICAL"
+        elif "voltage" in feature_name and subsystem_code in ["ELEVATION", "AZIMUTH", "TRAVERSE"]:
+            if 25.0 <= current_value <= 40.0:
+                severity = "NORMAL"
+            elif (20.0 <= current_value < 25.0) or (40.0 < current_value <= 45.0):
+                severity = "WARNING"
+            else:
+                severity = "CRITICAL"
+        elif feature_name == "hydraulic_pressure" and subsystem_code == "ELEVATION":
+            if 10.0 <= current_value <= 200.0:
+                severity = "NORMAL"
+            else:
+                severity = "CRITICAL"
+
         
         # We record events when deviation trips warning or critical thresholds
         if severity in ["WARNING", "CRITICAL"]:

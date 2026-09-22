@@ -30,10 +30,17 @@ export const SubsystemsPage: React.FC<SubsystemsPageProps> = ({ onDrillDown }) =
     return () => clearInterval(interval);
   }, []);
 
-  const categories = ['ALL', ...new Set(subsystems.map((s) => s.category))];
+  const ORDER = ['LRF', 'ALG', 'RECOIL', 'ELEVATION', 'AZIMUTH', 'TRAVERSE'];
+  const sortedSubsystems = [...subsystems].sort((a, b) => {
+    const idxA = ORDER.indexOf(a.code);
+    const idxB = ORDER.indexOf(b.code);
+    return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+  });
+
+  const categories = ['ALL', ...new Set(sortedSubsystems.map((s) => s.category))];
   const filtered = categoryFilter === 'ALL'
-    ? subsystems
-    : subsystems.filter((s) => s.category === categoryFilter);
+    ? sortedSubsystems
+    : sortedSubsystems.filter((s) => s.category === categoryFilter);
 
   if (isLoading) {
     return (

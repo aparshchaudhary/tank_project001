@@ -61,12 +61,35 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onDrillDown, onNavig
     );
   }
 
-  const comparisonData = overview.subsystems.map((s) => ({
-    name: s.name.replace(' Subsystem', '').replace(' System', ''),
-    health: s.current_health_index,
-    code: s.code,
-    id: s.id,
-  }));
+  const DASHBOARD_ORDER = ['LRF', 'ALG', 'RECOIL', 'ELEVATION', 'AZIMUTH'];
+
+  // Sort subsystems for Dashboard cards: strictly 1. LRF, 2. ALG, 3. Recoil, 4. Elevation, 5. Azimuth
+  const sortedSubsystems = [...overview.subsystems].sort((a, b) => {
+    const idxA = DASHBOARD_ORDER.indexOf(a.code);
+    const idxB = DASHBOARD_ORDER.indexOf(b.code);
+    return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+  });
+
+  // Subsystem Health Comparison Matrix: exactly 1. LRF, 2. ALG, 3. Recoil, 4. Elevation, 5. Azimuth
+  const comparisonData = DASHBOARD_ORDER
+    .map((code) => {
+      const sub = overview.subsystems.find((s) => s.code === code);
+      if (!sub) return null;
+      const labelMap: Record<string, string> = {
+        LRF: '1. LRF',
+        ALG: '2. ALG',
+        RECOIL: '3. Recoil',
+        ELEVATION: '4. Elevation',
+        AZIMUTH: '5. Azimuth',
+      };
+      return {
+        name: labelMap[code] || sub.name,
+        health: sub.current_health_index,
+        code: sub.code,
+        id: sub.id,
+      };
+    })
+    .filter((entry): entry is { name: string; health: number; code: string; id: string } => entry !== null);
 
   return (
     <div className="space-y-6">
@@ -161,12 +184,12 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onDrillDown, onNavig
             TURRET SUBASSEMBLY HEALTH STATUS MATRIX
           </h2>
           <span className="text-[11px] font-mono text-slate-400">
-            Showing all 6 test-bench monitored subassemblies
+            Ordered: 1. LRF | 2. ALG | 3. Recoil | 4. Elevation | 5. Azimuth
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {overview.subsystems.map((sub) => (
+          {sortedSubsystems.map((sub) => (
             <SubsystemCard
               key={sub.id}
               subsystem={sub}

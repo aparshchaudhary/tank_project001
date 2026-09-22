@@ -13,6 +13,8 @@ router = APIRouter()
 @router.get("/", response_model=List[SubsystemResponse])
 def get_all_subsystems(db: Session = Depends(get_db)):
     subsystems = db.query(Subsystem).all()
+    SUBSYSTEM_ORDER = ["LRF", "ALG", "RECOIL", "ELEVATION", "AZIMUTH", "TRAVERSE"]
+    subsystems.sort(key=lambda s: SUBSYSTEM_ORDER.index(s.code) if s.code in SUBSYSTEM_ORDER else 99)
     results = []
     for s in subsystems:
         active_alerts = db.query(Alert).filter(
