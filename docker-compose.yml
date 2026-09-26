@@ -1,0 +1,127 @@
+version: '3.8'
+
+# ==============================================================================
+# TURRET CBPM — Multi-Service Docker Compose with ntopng Network Monitoring
+# Services:
+#   1. backend:        FastAPI Telemetry Ingestion Pipeline & Embedded Defense UI
+#   2. redis:          State & Timeseries Cache for ntopng
+#   3. ntopng:         High-Speed Network Traffic & Latency Monitoring Engine
+#   4. sensor-emitter: Physical Turret Sensor Simulator (continuous network packets)
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. FastAPI Backend & Ingestion API (Port 8000)
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: turret-cbpm-backend
+    restart: unless-stopped
+    environment:
+      PORT: 8000
+      DATABASE_URL: sqlite:///./turret_cbpm.db
+      SECRET_KEY: ${SECRET_KEY:-defense-laboratory-cbpm-secret-token-key-2026}
+      OUT_OF_ORDER_TOLERANCE_SECONDS: 120.0
+      DEFAULT_K_SIGMA: 3.0
+    ports:
+      - "8000:8000"
+    networks:
+      turret-net:
+        ipv4_address: 172.28.0.10
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ----------------------------------------------------------------------------
+  # 2. Redis Cache for ntopng (Internal Port 6379)
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:alpine
+    container_name: turret-cbpm-redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      turret-net:
+        ipv4_address: 172.28.0.20
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # 3. ntopng Network Traffic & Telemetry Latency Monitor (Web UI: Port 3001)
+  # ----------------------------------------------------------------------------
+  ntopng:
+    image: ntop/ntopng:stable
+    container_name: turret-cbpm-ntopng
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./docker/ntopng/ntopng.conf:/etc/ntopng/ntopng.conf:ro
+      - ./docker/ntopng/protos.txt:/etc/ntopng/protos.txt:ro
+      - ntopng_data:/var/lib/ntopng
+    ports:
+      - "3001:3000"
+    networks:
+      turret-net:
+        ipv4_address: 172.28.0.30
+    command: ["/etc/ntopng/ntopng.conf"]
+
+  # ----------------------------------------------------------------------------
+  # 4. Turret Sensor Edge Telemetry Emitter (Streams packets across turret-net)
+  # ----------------------------------------------------------------------------
+  sensor-emitter:
+    image: python:3.11-slim
+    container_name: turret-cbpm-sensor-emitter
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      INGESTION_URL: http://backend:8000/api/v1/ingestion/batch
+      EMIT_INTERVAL_SECONDS: 1.0
+      SOURCE_ID: TURRET_EDGE_SENSORS
+    volumes:
+      - ./docker/scripts/sensor_edge_emitter.py:/app/sensor_edge_emitter.py:ro
+    working_dir: /app
+    command: ["python", "-u", "/app/sensor_edge_emitter.py"]
+    networks:
+      turret-net:
+        ipv4_address: 172.28.0.40
+
+# ------------------------------------------------------------------------------
+# Persistent Storage Volumes
+# ------------------------------------------------------------------------------
+volumes:
+  redis_data:
+    name: turret_cbpm_redis_data
+  ntopng_data:
+    name: turret_cbpm_ntopng_data
+
+# ------------------------------------------------------------------------------
+# Isolated Bridge Network with Static Subnet (monitored by ntopng)
+# ------------------------------------------------------------------------------
+networks:
+  turret-net:
+    name: turret_cbpm_net
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1

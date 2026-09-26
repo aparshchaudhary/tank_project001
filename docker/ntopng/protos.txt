@@ -1,0 +1,7 @@
+# ==============================================================================
+# ntopng / nDPI Custom Protocol Definitions for TURRET CBPM
+# Classifies edge sensor telemetry flows on port 8000
+# ==============================================================================
+
+# Turret Sensor Ingestion API & WebSocket Telemetry Stream
+tcp:8000@Turret_CBPM_Telemetry
