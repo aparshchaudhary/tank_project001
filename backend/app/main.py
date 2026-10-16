@@ -54,10 +54,11 @@ async def lifespan(app: FastAPI):
     seed_database()
     logger.info("Database initialized with nominal test-bench baseline signatures.")
 
-    # 2. Register telemetry broadcast callback and start background simulator runner
+    # 2. Register telemetry broadcast callback and initialize idle simulator runner
     simulator_runner.register_telemetry_subscriber(telemetry_broadcast_callback)
+    simulator_runner.stop()
     sim_task = asyncio.create_task(simulator_runner.run_loop())
-    logger.info("Simulator background engine activated.")
+    logger.info("Simulator background engine initialized in idle state (manual ingestion ready).")
 
     yield
 

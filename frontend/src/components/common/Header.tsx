@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTelemetry } from '../../context/TelemetryContext';
-import { Shield, Radio, Activity, AlertTriangle, User as UserIcon, Play, LogOut, CheckCircle2 } from 'lucide-react';
+import { Shield, Radio, Activity, AlertTriangle, User as UserIcon, LogOut, CheckCircle2 } from 'lucide-react';
 
 interface HeaderProps {
   onOpenAlerts?: () => void;
@@ -10,7 +10,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenAlerts, activeAlertCount = 0 }) => {
   const { user, role, logout } = useAuth();
-  const { isConnected, simulatorStatus, triggerDemoMode } = useTelemetry();
+  const { isConnected, simulatorStatus } = useTelemetry();
 
   return (
     <header className="h-16 bg-defense-900 border-b border-defense-700/60 px-6 flex items-center justify-between sticky top-0 z-30 shadow-md">
@@ -33,27 +33,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAlerts, activeAlertCount =
           </div>
         </div>
 
-        {/* DEMO / SYNTHETIC DATA NOTICE */}
-        <div className="ml-4 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/30 flex items-center gap-2">
-          <Radio className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-          <span className="text-[11px] font-mono font-bold tracking-wide text-amber-400 uppercase">
-            DEMO / SYNTHETIC DATA
+        {/* LIVE TELEMETRY INGESTION NOTICE */}
+        <div className="ml-4 px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2">
+          <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+          <span className="text-[11px] font-mono font-bold tracking-wide text-emerald-400 uppercase">
+            LIVE TELEMETRY INGESTION
           </span>
         </div>
       </div>
 
       {/* Center/Right Actions & Telemetry Status */}
       <div className="flex items-center gap-4">
-        {/* Live Simulator & Demo Mode Quick Trigger */}
-        <button
-          onClick={triggerDemoMode}
-          className="hidden md:flex items-center gap-2 px-3 py-1.5 text-xs font-mono font-semibold rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 transition-colors shadow-sm"
-          title="Run 4-stage automated fault sequence (Healthy -> Degradation -> Alerts -> Recommendations)"
-        >
-          <Play className="w-3.5 h-3.5 fill-current" />
-          DEMO SCENARIO
-        </button>
-
         {/* DAQ / Stream Status */}
         <div className="flex items-center gap-2 px-3 py-1 rounded bg-defense-950 border border-defense-700/60 font-mono text-xs">
           <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400 shadow-[0_0_8px_#10b981]' : 'bg-red-500 animate-ping'}`} />

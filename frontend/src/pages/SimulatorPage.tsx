@@ -8,14 +8,13 @@ import {
   Zap,
   Gauge,
   Sliders,
-  Sparkles,
   RefreshCw,
   AlertTriangle,
   Layers
 } from 'lucide-react';
 
 export const SimulatorPage: React.FC = () => {
-  const { simulatorStatus, refreshSimulatorStatus, triggerDemoMode } = useTelemetry();
+  const { simulatorStatus, refreshSimulatorStatus } = useTelemetry();
   const [scenarios, setScenarios] = useState<string[]>([]);
   const [selectedScenario, setSelectedScenario] = useState<string>('A. HEALTHY');
   const [speed, setSpeed] = useState<number>(1.0);
@@ -103,15 +102,6 @@ export const SimulatorPage: React.FC = () => {
             Simulate laboratory/test-bench condition-monitoring telemetry across selectable wear scenarios, noise conditions, and failure modes.
           </p>
         </div>
-
-        {/* Demo Mode Button */}
-        <button
-          onClick={triggerDemoMode}
-          className="flex items-center gap-2 px-4 py-2 rounded bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-cyan-200 border border-cyan-400/50 hover:from-cyan-500/40 hover:to-blue-500/40 transition-all font-bold tracking-wider shadow-lg"
-        >
-          <Sparkles className="w-4 h-4 text-cyan-300 animate-spin" />
-          LAUNCH DEMO SCENARIO SEQUENCE
-        </button>
       </div>
 
       {/* Demo Mode Active Banner */}
