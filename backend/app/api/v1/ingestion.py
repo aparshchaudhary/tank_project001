@@ -76,6 +76,23 @@ def ingest_single_reading(
     feat_name = payload.sensor_type or payload.sensor_channel_id.replace(f"CH_{sub_key}_", "").lower()
     telemetry_cache.update_features(sub_key, {feat_name: payload.value})
 
+    try:
+        simulator_runner.broadcast_telemetry({
+            "type": "TELEMETRY_UPDATE",
+            "batch": [{
+                "subsystem_id": subsystem.id,
+                "subsystem_code": subsystem.code,
+                "subsystem_name": subsystem.name,
+                "health_index": subsystem.current_health_index,
+                "status_band": "HEALTHY",
+                "features": telemetry_cache.get_features(subsystem.code),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }],
+            "simulator_status": simulator_runner.get_status()
+        })
+    except Exception:
+        pass
+
     return reading
 
 @router.post("/batch", response_model=BatchIngestionResponse)
@@ -202,7 +219,7 @@ def ingest_batch_readings(
                     "subsystem_name": sub.name,
                     "health_index": hi_record.health_index,
                     "status_band": hi_record.status_band,
-                    "features": features,
+                    "features": telemetry_cache.get_features(sub.code),
                     "timestamp": datetime.now(timezone.utc).isoformat()
                 })
 

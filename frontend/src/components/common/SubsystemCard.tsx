@@ -484,6 +484,26 @@ export const SubsystemCard: React.FC<SubsystemCardProps> = ({
           </div>
         </div>
 
+        {/* Live Primary Telemetry Metric Preview */}
+        {subItems.length > 0 && (
+          <div className="mt-3 p-2 rounded bg-defense-950/80 border border-defense-800 text-xs font-mono flex items-center justify-between">
+            <span className="text-slate-400 text-[11px] truncate max-w-[170px]">
+              {subItems[0].parameter}:
+            </span>
+            <span
+              className={`font-bold text-xs px-2 py-0.5 rounded border ${
+                subItems[0].status === 'CRITICAL'
+                  ? 'text-red-400 bg-red-950/50 border-red-800'
+                  : subItems[0].status === 'WARNING'
+                  ? 'text-amber-400 bg-amber-950/50 border-amber-800'
+                  : 'text-cyan-300 bg-defense-900 border-defense-800'
+              }`}
+            >
+              {subItems[0].value} {subItems[0].unit !== 'STATE' && subItems[0].unit !== 'SWITCHES' ? subItems[0].unit : ''}
+            </span>
+          </div>
+        )}
+
         {/* Interactive Expandable Sub-Items Section */}
         {subItems.length > 0 && (
           <div className="mt-4 pt-3 border-t border-defense-800 font-mono">

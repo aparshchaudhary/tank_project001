@@ -3,7 +3,8 @@ import json
 import logging
 import os
 from contextlib import asynccontextmanager
-from typing import Set
+from datetime import datetime, timezone
+from typing import Set, Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +14,7 @@ from fastapi.responses import FileResponse
 from app.core.config import settings
 from app.seed_data import seed_database
 from app.simulator.runner import simulator_runner
+from app.services.telemetry_cache import telemetry_cache
 
 from app.api.v1 import (
     auth,
@@ -36,6 +38,7 @@ logger = logging.getLogger(__name__)
 
 # Active WebSocket connections
 active_websockets: Set[WebSocket] = set()
+main_event_loop: Optional[asyncio.AbstractEventLoop] = None
 
 def telemetry_broadcast_callback(payload: dict):
     if not active_websockets:
@@ -43,12 +46,18 @@ def telemetry_broadcast_callback(payload: dict):
     text_data = json.dumps(payload)
     for ws in list(active_websockets):
         try:
-            asyncio.create_task(ws.send_text(text_data))
+            if main_event_loop and main_event_loop.is_running():
+                asyncio.run_coroutine_threadsafe(ws.send_text(text_data), main_event_loop)
+            else:
+                asyncio.create_task(ws.send_text(text_data))
         except Exception:
             active_websockets.discard(ws)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global main_event_loop
+    main_event_loop = asyncio.get_running_loop()
+
     # 1. Initialize DB and Seed Data
     logger.info("Initializing database and verifying seed data...")
     seed_database()
@@ -118,10 +127,23 @@ async def websocket_telemetry_endpoint(websocket: WebSocket):
     await websocket.accept()
     active_websockets.add(websocket)
     try:
+        initial_batch = []
+        for code, features in telemetry_cache.get_all().items():
+            initial_batch.append({
+                "subsystem_id": code,
+                "subsystem_code": code,
+                "subsystem_name": code,
+                "health_index": 100.0,
+                "status_band": "HEALTHY",
+                "features": features,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
+
         await websocket.send_text(json.dumps({
             "type": "HANDSHAKE",
             "message": "Connected to TURRET CBPM Real-Time Telemetry Stream",
-            "simulator_status": simulator_runner.get_status()
+            "simulator_status": simulator_runner.get_status(),
+            "batch": initial_batch
         }))
         while True:
             data = await websocket.receive_text()
