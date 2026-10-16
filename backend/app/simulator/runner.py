@@ -13,6 +13,7 @@ from app.services.anomaly_detector import anomaly_detector
 from app.services.health_index_engine import health_index_engine
 from app.services.alert_service import alert_service
 from app.services.buffer_service import edge_buffer_service
+from app.services.telemetry_cache import telemetry_cache
 
 logger = logging.getLogger(__name__)
 
@@ -184,6 +185,7 @@ class SimulatorRunner:
 
                 # Compute & record Health Index
                 if current_feature_values and active_baselines:
+                    telemetry_cache.update_features(sub.code, current_feature_values)
                     hi_record = health_index_engine.record_health_index(
                         db=db,
                         subsystem=sub,

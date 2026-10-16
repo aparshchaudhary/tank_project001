@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.all_models import Subsystem, HealthIndexRecord, Alert, SensorChannel
 from app.schemas.schemas import SystemOverviewResponse, SubsystemResponse, AlertResponse, HealthIndexHistoryItem
+from app.services.telemetry_cache import telemetry_cache
 
 router = APIRouter()
 
@@ -47,7 +48,8 @@ def get_system_overview(db: Session = Depends(get_db)):
             feature_weights=s.feature_weights or {},
             status_band=band,
             active_alert_count=len(alerts_for_sub),
-            trend_direction="DEGRADING" if s.current_health_index < 75.0 else "STABLE"
+            trend_direction="DEGRADING" if s.current_health_index < 75.0 else "STABLE",
+            latest_features=telemetry_cache.get_features(s.code)
         ))
 
     overall_hi = 100.0

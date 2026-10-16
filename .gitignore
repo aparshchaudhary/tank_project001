@@ -9,6 +9,8 @@ __pycache__/
 
 # Databases & Runtime
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 *.log

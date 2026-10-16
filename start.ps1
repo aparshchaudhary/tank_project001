@@ -8,7 +8,9 @@ $rootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # Detect Python
 $pythonExe = "python"
-if (Test-Path "$rootDir\venv\Scripts\python.exe") {
+if (Test-Path "$rootDir\backend\.venv\Scripts\python.exe") {
+    $pythonExe = "$rootDir\backend\.venv\Scripts\python.exe"
+} elseif (Test-Path "$rootDir\venv\Scripts\python.exe") {
     $pythonExe = "$rootDir\venv\Scripts\python.exe"
 } elseif (Test-Path "C:\Users\hp\.gemini\antigravity\scratch\turret-cbpm\venv\Scripts\python.exe") {
     $pythonExe = "C:\Users\hp\.gemini\antigravity\scratch\turret-cbpm\venv\Scripts\python.exe"

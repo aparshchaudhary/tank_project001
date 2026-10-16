@@ -7,6 +7,7 @@ from app.core.dependencies import require_admin, require_viewer, get_current_act
 from app.models.all_models import Subsystem, SensorChannel, BaselineSignature, AnomalyEvent, Alert, User
 from app.schemas.schemas import SubsystemResponse, SubsystemDetailResponse, FeatureWeightUpdate
 from app.services.prognostics_rul import prognostics_engine
+from app.services.telemetry_cache import telemetry_cache
 
 router = APIRouter()
 
@@ -43,7 +44,8 @@ def get_all_subsystems(db: Session = Depends(get_db)):
             feature_weights=s.feature_weights or {},
             status_band=status_band,
             active_alert_count=active_alerts,
-            trend_direction="DEGRADING" if s.current_health_index < 75 else "STABLE"
+            trend_direction="DEGRADING" if s.current_health_index < 75 else "STABLE",
+            latest_features=telemetry_cache.get_features(s.code)
         ))
     return results
 
@@ -92,6 +94,7 @@ def get_subsystem_detail(subsystem_id: str, db: Session = Depends(get_db)):
         status_band=status_band,
         active_alert_count=active_alerts,
         trend_direction="DEGRADING" if s.current_health_index < 75 else "STABLE",
+        latest_features=telemetry_cache.get_features(s.code),
         sensors=sensors,
         active_baselines=baselines,
         recent_anomalies=anomalies,

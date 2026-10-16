@@ -254,6 +254,7 @@ class SubsystemResponse(BaseModel):
     status_band: Optional[str] = "HEALTHY"
     active_alert_count: Optional[int] = 0
     trend_direction: Optional[str] = "STABLE"
+    latest_features: Optional[Dict[str, float]] = None
 
 class SubsystemDetailResponse(SubsystemResponse):
     sensors: List[SensorChannelResponse] = []

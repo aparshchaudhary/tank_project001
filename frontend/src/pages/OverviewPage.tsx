@@ -3,6 +3,7 @@ import { SystemOverview, Subsystem } from '../types';
 import { api } from '../services/api';
 import { SubsystemCard } from '../components/common/SubsystemCard';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { useTelemetry } from '../context/TelemetryContext';
 import {
   Activity,
   AlertTriangle,
@@ -34,6 +35,7 @@ interface OverviewPageProps {
 export const OverviewPage: React.FC<OverviewPageProps> = ({ onDrillDown, onNavigateAlerts }) => {
   const [overview, setOverview] = useState<SystemOverview | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { latestBatch } = useTelemetry();
 
   const fetchOverview = async () => {
     try {
@@ -51,6 +53,12 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onDrillDown, onNavig
     const interval = setInterval(fetchOverview, 4000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (latestBatch && latestBatch.length > 0) {
+      fetchOverview();
+    }
+  }, [latestBatch]);
 
   if (isLoading || !overview) {
     return (

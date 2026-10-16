@@ -10,6 +10,7 @@ from app.services.buffer_service import edge_buffer_service
 from app.services.anomaly_detector import anomaly_detector
 from app.services.alert_service import alert_service
 from app.services.health_index_engine import health_index_engine
+from app.services.telemetry_cache import telemetry_cache
 from app.simulator.runner import simulator_runner
 
 router = APIRouter()
@@ -70,6 +71,11 @@ def ingest_single_reading(
     db.add(reading)
     db.commit()
     db.refresh(reading)
+
+    sub_key = subsystem.code
+    feat_name = payload.sensor_type or payload.sensor_channel_id.replace(f"CH_{sub_key}_", "").lower()
+    telemetry_cache.update_features(sub_key, {feat_name: payload.value})
+
     return reading
 
 @router.post("/batch", response_model=BatchIngestionResponse)
@@ -145,6 +151,7 @@ def ingest_batch_readings(
             subsystems_updated[sub_key][feat_name] = r.value
 
         for sub_key, features in subsystems_updated.items():
+            telemetry_cache.update_features(sub_key, features)
             sub = db.query(Subsystem).filter(
                 (Subsystem.code == sub_key) | (Subsystem.id == sub_key)
             ).first()

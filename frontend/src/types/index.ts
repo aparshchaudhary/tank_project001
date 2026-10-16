@@ -24,6 +24,7 @@ export interface Subsystem {
   status_band?: string;
   active_alert_count?: number;
   trend_direction?: string;
+  latest_features?: Record<string, number>;
 }
 
 export interface SensorChannel {

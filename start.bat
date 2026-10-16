@@ -10,7 +10,9 @@ cd /d "%ROOT_DIR%"
 
 rem Python executable detection
 set PYTHON_EXE=python
-if exist "%ROOT_DIR%venv\Scripts\python.exe" (
+if exist "%ROOT_DIR%backend\.venv\Scripts\python.exe" (
+    set PYTHON_EXE="%ROOT_DIR%backend\.venv\Scripts\python.exe"
+) else if exist "%ROOT_DIR%venv\Scripts\python.exe" (
     set PYTHON_EXE="%ROOT_DIR%venv\Scripts\python.exe"
 ) else if exist "C:\Users\hp\.gemini\antigravity\scratch\turret-cbpm\venv\Scripts\python.exe" (
     set PYTHON_EXE="C:\Users\hp\.gemini\antigravity\scratch\turret-cbpm\venv\Scripts\python.exe"

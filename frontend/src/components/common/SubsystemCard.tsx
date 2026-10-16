@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Subsystem } from '../../types';
 import { StatusBadge } from './StatusBadge';
+import { useTelemetry } from '../../context/TelemetryContext';
 import {
   TrendingUp,
   TrendingDown,
@@ -38,19 +39,38 @@ export interface TechnicalSubItem {
   }[];
 }
 
-export const getSubsystemTechnicalItems = (subsystemCode: string): TechnicalSubItem[] => {
+export const getSubsystemTechnicalItems = (
+  subsystemCode: string,
+  features?: Record<string, number>
+): TechnicalSubItem[] => {
   switch (subsystemCode) {
-    case 'LRF':
+    case 'LRF': {
+      const v = features?.detector_voltage ?? features?.voltage;
+      const vStr = v !== undefined ? v.toFixed(2) : '11.50';
+      let vStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' = 'NORMAL';
+      if (v !== undefined) {
+        if (v < 10.5 || v > 12.5) vStatus = 'CRITICAL';
+        else if ((v >= 10.5 && v < 11.0) || (v > 12.0 && v <= 12.5)) vStatus = 'WARNING';
+      }
+
+      const opt = features?.optical_alignment ?? features?.optical_module_health;
+      const optStr = opt !== undefined ? opt.toFixed(1) : '99.2';
+      const optStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' = opt !== undefined && opt < 95.0 ? 'WARNING' : 'NORMAL';
+
+      const bite = features?.bite_status ?? features?.bite_self_test;
+      const biteStr = bite !== undefined ? (bite >= 1.0 ? 'PASSED' : 'FAILED') : 'PASSED';
+      const biteStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' = bite !== undefined && bite < 1.0 ? 'CRITICAL' : 'NORMAL';
+
       return [
         {
           id: '1.1',
           code: '1.1',
           title: 'LRF Detector Voltage Check',
           parameter: 'Detector Supply Voltage',
-          value: '11.5',
+          value: vStr,
           unit: 'V',
           range: '10.5 – 12.5 V (Nominal: 11.0 – 12.0 V)',
-          status: 'NORMAL',
+          status: vStatus,
           statusDetails: 'Below 10.5V = ALERT | 10.5-11.0V = WARNING | 11.0-12.0V = OK/FUNCTIONING | 12.0-12.5V = WARNING | Above 12.5V = CRITICAL ALERT',
           details: 'Monitors the electrical detector voltage for the Laser Range Finder. Displayed strictly in Volts (V), not Amps.',
         },
@@ -59,10 +79,10 @@ export const getSubsystemTechnicalItems = (subsystemCode: string): TechnicalSubI
           code: '1.2',
           title: 'Optical Module Transmitter / Receiver Status',
           parameter: 'Beam Collimation & Reception Health',
-          value: '99.2',
+          value: optStr,
           unit: '%',
           range: '> 95.0 % Operational',
-          status: 'NORMAL',
+          status: optStatus,
           statusDetails: 'Optoelectronic transmission efficiency and optical receiver sensitivity.',
           details: 'Continuous monitoring of laser transmitter diode path and receiver avalanche photodiode.',
         },
@@ -71,26 +91,42 @@ export const getSubsystemTechnicalItems = (subsystemCode: string): TechnicalSubI
           code: '1.3',
           title: 'Range Measurement BITE Self-Test',
           parameter: 'Built-in Test Counter Evaluation',
-          value: 'PASSED',
+          value: biteStr,
           unit: 'STATE',
           range: 'PASSED / VERIFIED',
-          status: 'NORMAL',
+          status: biteStatus,
           statusDetails: 'Internal digital range counter calibration and pulse timing verification.',
           details: 'Automated self-test confirming pulse chronometer resolution and optical threshold discriminator response.',
         },
       ];
+    }
 
-    case 'ALG':
+    case 'ALG': {
+      const circ = features?.circuit_serviceability;
+      const circStr = circ !== undefined ? (circ >= 1.0 ? 'ACTIVE / CONTINUOUS' : 'INTERRUPTED / OPEN') : 'ACTIVE / CONTINUOUS';
+      const circStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' = circ !== undefined && circ < 1.0 ? 'CRITICAL' : 'NORMAL';
+
+      const switches = [
+        { code: '2.2.1', name: 'RC Microswitch', val: features?.rc_microswitch ?? 1.0 },
+        { code: '2.2.2', name: 'CLM Microswitch', val: features?.clm_microswitch ?? 1.0 },
+        { code: '2.2.3', name: 'Rammer Microswitch', val: features?.rammer_microswitch ?? 1.0 },
+        { code: '2.2.4', name: 'CBDM Microswitch', val: features?.cbdm_microswitch ?? 1.0 },
+        { code: '2.2.5', name: 'CBDD Microswitch', val: features?.cbdd_microswitch ?? 1.0 },
+        { code: '2.2.6', name: 'Gun Motor Lock Microswitch', val: features?.gun_motor_lock ?? 1.0 },
+      ];
+      const verifiedCount = switches.filter((s) => s.val >= 1.0).length;
+      const switchStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' = verifiedCount < 6 ? 'WARNING' : 'NORMAL';
+
       return [
         {
           id: '2.1',
           code: '2.1',
           title: 'Circuit Serviceability Check',
           parameter: 'Circuit Continuity & Current Path',
-          value: 'ACTIVE / CONTINUOUS',
+          value: circStr,
           unit: 'STATE',
           range: 'Closed Loop Continuity',
-          status: 'NORMAL',
+          status: circStatus,
           statusDetails: 'Circuit serviceability logic verifies current passes through microswitch circuits when actuated.',
           details: 'Validates electrical integrity of the automatic loader sequencing bus.',
         },
@@ -99,34 +135,59 @@ export const getSubsystemTechnicalItems = (subsystemCode: string): TechnicalSubI
           code: '2.2',
           title: 'Microswitch Operation Check (6 Switches)',
           parameter: 'Microswitch Current & Contact State',
-          value: '6/6 VERIFIED',
+          value: `${verifiedCount}/6 VERIFIED`,
           unit: 'SWITCHES',
           range: 'Operating Current: Configurable / TBD',
-          status: 'NORMAL',
+          status: switchStatus,
           statusDetails: 'All 6 microswitches operational. Current thresholds marked as TBD / Configurable.',
           details: 'Inspects operating status across all 6 automatic loader microswitch positions.',
-          subSwitches: [
-            { code: '2.2.1', name: 'RC Microswitch', status: 'CLOSED / CONTINUOUS', threshold: 'TBD (Configurable)' },
-            { code: '2.2.2', name: 'CLM Microswitch', status: 'CLOSED / CONTINUOUS', threshold: 'TBD (Configurable)' },
-            { code: '2.2.3', name: 'Rammer Microswitch', status: 'CLOSED / CONTINUOUS', threshold: 'TBD (Configurable)' },
-            { code: '2.2.4', name: 'CBDM Microswitch', status: 'CLOSED / CONTINUOUS', threshold: 'TBD (Configurable)' },
-            { code: '2.2.5', name: 'CBDD Microswitch', status: 'CLOSED / CONTINUOUS', threshold: 'TBD (Configurable)' },
-            { code: '2.2.6', name: 'Gun Motor Lock Microswitch', status: 'CLOSED / CONTINUOUS', threshold: 'TBD (Configurable)' },
-          ],
+          subSwitches: switches.map((s) => ({
+            code: s.code,
+            name: s.name,
+            status: s.val >= 1.0 ? 'CLOSED / CONTINUOUS' : 'OPEN / FAULT',
+            threshold: 'TBD (Configurable)',
+          })),
         },
       ];
+    }
 
-    case 'RECOIL':
+    case 'RECOIL': {
+      const dist = features?.recoil_distance;
+      const distStr = dist !== undefined ? dist.toFixed(1) : '275.0';
+      let distStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' = 'NORMAL';
+      if (dist !== undefined) {
+        if (dist > 350.0) distStatus = 'CRITICAL';
+        else if (dist > 300.0) distStatus = 'WARNING';
+      }
+
+      const spd = features?.recoil_speed;
+      const spdStr = spd !== undefined ? spd.toFixed(2) : '1.85';
+      const spdStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        spd !== undefined && (spd < 1.5 || spd > 2.2) ? 'WARNING' : 'NORMAL';
+
+      const time = features?.recoil_time;
+      const timeStr = time !== undefined ? time.toFixed(2) : '0.32';
+      const timeStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        time !== undefined && (time < 0.28 || time > 0.38) ? 'WARNING' : 'NORMAL';
+
+      const oil = features?.oil_level;
+      const oilStr = oil !== undefined ? oil.toFixed(1) : '94.0';
+      let oilStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' = 'NORMAL';
+      if (oil !== undefined) {
+        if (oil < 85.0) oilStatus = 'CRITICAL';
+        else if (oil < 90.0) oilStatus = 'WARNING';
+      }
+
       return [
         {
           id: '3.1',
           code: '3.1',
           title: 'Recoil Distance Reading',
           parameter: 'Buffer Stroke Travel',
-          value: '275.0',
+          value: distStr,
           unit: 'mm',
           range: '250 – 300 mm = NORMAL',
-          status: 'NORMAL',
+          status: distStatus,
           statusDetails: '250-300 mm = NORMAL | 300-350 mm = WARNING | Above 350 mm = CRITICAL ALERT | <250 mm = Out of Range Safe',
           details: 'Stroke distance of the recoil buffer cylinder measured in millimetres (mm). Critical threshold at >350 mm indicates buffer bottoming-out risk.',
         },
@@ -135,10 +196,10 @@ export const getSubsystemTechnicalItems = (subsystemCode: string): TechnicalSubI
           code: '3.2',
           title: 'Recoil Speed Reading',
           parameter: 'Recoil Motion Speed',
-          value: '1.85',
+          value: spdStr,
           unit: 'm/s',
           range: '1.50 – 2.20 m/s',
-          status: 'NORMAL',
+          status: spdStatus,
           statusDetails: 'Recoil velocity measured through displacement rate tracking.',
           details: 'Evaluates fluid orifice throttling and damper rod damping resistance.',
         },
@@ -147,10 +208,10 @@ export const getSubsystemTechnicalItems = (subsystemCode: string): TechnicalSubI
           code: '3.3',
           title: 'Recoil Time Reading',
           parameter: 'Cycle Duration Time',
-          value: '0.32',
+          value: timeStr,
           unit: 's',
           range: '0.28 – 0.38 s',
-          status: 'NORMAL',
+          status: timeStatus,
           statusDetails: 'Recoil stroke return time in seconds.',
           details: 'Verifies pneumatic recuperator counter-pressure and return spring cycle completion.',
         },
@@ -159,26 +220,42 @@ export const getSubsystemTechnicalItems = (subsystemCode: string): TechnicalSubI
           code: '3.4',
           title: 'Recoil Oil Level',
           parameter: 'Hydraulic Buffer Reservoir',
-          value: '94.0',
+          value: oilStr,
           unit: '%',
           range: '> 85.0 % (Nominal: 90 - 100%)',
-          status: 'NORMAL',
+          status: oilStatus,
           statusDetails: 'Hydraulic fluid reservoir percentage in recoil damper accumulator.',
           details: 'Ensures adequate fluid charge to prevent aeration, cavitation, and thermal seal degradation.',
         },
       ];
+    }
 
-    case 'ELEVATION':
+    case 'ELEVATION': {
+      const k1 = features?.k1_voltage;
+      const k1Str = k1 !== undefined ? k1.toFixed(1) : '32.5';
+      const k1Status: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        k1 !== undefined && (k1 < 25.0 || k1 > 40.0) ? 'WARNING' : 'NORMAL';
+
+      const psm = features?.psm_voltage;
+      const psmStr = psm !== undefined ? psm.toFixed(1) : '33.0';
+      const psmStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        psm !== undefined && (psm < 25.0 || psm > 40.0) ? 'WARNING' : 'NORMAL';
+
+      const press = features?.hydraulic_pressure;
+      const pressStr = press !== undefined ? press.toFixed(1) : '125.0';
+      const pressStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        press !== undefined && (press < 10.0 || press > 200.0) ? 'WARNING' : 'NORMAL';
+
       return [
         {
           id: '4.1',
           code: '4.1',
           title: 'K1 Voltage Check',
           parameter: 'K1 Elevation Contactor Voltage',
-          value: '32.5',
+          value: k1Str,
           unit: 'V',
           range: '25 – 40 V = IDEAL / NORMAL',
-          status: 'NORMAL',
+          status: k1Status,
           statusDetails: '25-40 V = IDEAL / NORMAL. Displayed strictly in Volts (V), not Amps.',
           details: 'Primary electrical relay K1 coil and bus supply voltage for elevation drive control.',
         },
@@ -187,10 +264,10 @@ export const getSubsystemTechnicalItems = (subsystemCode: string): TechnicalSubI
           code: '4.2',
           title: 'Power Supply Mount Voltage Check',
           parameter: 'PSM Regulated Bus Voltage',
-          value: '33.0',
+          value: psmStr,
           unit: 'V',
           range: '25 – 40 V = IDEAL / NORMAL',
-          status: 'NORMAL',
+          status: psmStatus,
           statusDetails: '25-40 V = IDEAL / NORMAL. Displayed strictly in Volts (V), not Amps.',
           details: 'Electrical voltage delivery from the elevation power supply mount assembly.',
         },
@@ -199,26 +276,42 @@ export const getSubsystemTechnicalItems = (subsystemCode: string): TechnicalSubI
           code: '4.3',
           title: 'Actuating Cylinder Hydraulic Fluid Pressure',
           parameter: 'Elevation Cylinder Pressure',
-          value: '125.0',
+          value: pressStr,
           unit: 'MPa',
           range: '10 – 200 MPa = NORMAL',
-          status: 'NORMAL',
+          status: pressStatus,
           statusDetails: '10 - 200 MPa = NORMAL. Displayed in MPa.',
           details: 'Operating hydraulic fluid pressure in the elevation actuating cylinder powering gun trunnion movement.',
         },
       ];
+    }
 
-    case 'AZIMUTH':
+    case 'AZIMUTH': {
+      const k1 = features?.k1_voltage;
+      const k1Str = k1 !== undefined ? k1.toFixed(1) : '32.5';
+      const k1Status: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        k1 !== undefined && (k1 < 25.0 || k1 > 40.0) ? 'WARNING' : 'NORMAL';
+
+      const mp9 = features?.mp9_voltage;
+      const mp9Str = mp9 !== undefined ? mp9.toFixed(1) : '31.8';
+      const mp9Status: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        mp9 !== undefined && (mp9 < 25.0 || mp9 > 40.0) ? 'WARNING' : 'NORMAL';
+
+      const motor = features?.motor_voltage;
+      const motorStr = motor !== undefined ? motor.toFixed(1) : '34.0';
+      const motorStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        motor !== undefined && (motor < 25.0 || motor > 40.0) ? 'WARNING' : 'NORMAL';
+
       return [
         {
           id: '5.1',
           code: '5.1',
           title: 'K1 Voltage Check',
           parameter: 'K1 Azimuth Contactor Voltage',
-          value: '32.5',
+          value: k1Str,
           unit: 'V',
           range: '25 – 40 V = IDEAL / NORMAL',
-          status: 'NORMAL',
+          status: k1Status,
           statusDetails: '25-40 V = IDEAL / NORMAL. Displayed strictly in Volts (V), not Amps.',
           details: 'Electrical voltage reading across the K1 azimuth slew drive contactor.',
         },
@@ -227,10 +320,10 @@ export const getSubsystemTechnicalItems = (subsystemCode: string): TechnicalSubI
           code: '5.2',
           title: 'MP9 Voltage Check',
           parameter: 'MP9 Distribution Rail Voltage',
-          value: '31.8',
+          value: mp9Str,
           unit: 'V',
           range: '25 – 40 V = IDEAL / NORMAL',
-          status: 'NORMAL',
+          status: mp9Status,
           statusDetails: '25-40 V = IDEAL / NORMAL. Displayed strictly in Volts (V), not Amps.',
           details: 'Auxiliary electrical distribution rail MP9 voltage for turret rotation electronics.',
         },
@@ -239,26 +332,37 @@ export const getSubsystemTechnicalItems = (subsystemCode: string): TechnicalSubI
           code: '5.3',
           title: 'Actuating Motor Voltage Check',
           parameter: 'Azimuth Drive Motor Voltage',
-          value: '34.0',
+          value: motorStr,
           unit: 'V',
           range: '25 – 40 V = IDEAL / NORMAL',
-          status: 'NORMAL',
+          status: motorStatus,
           statusDetails: '25-40 V = IDEAL / NORMAL. Displayed strictly in Volts (V), not Amps.',
           details: 'Terminal electrical voltage supplied to the high-torque azimuth slew drive motor.',
         },
       ];
+    }
 
-    case 'TRAVERSE':
+    case 'TRAVERSE': {
+      const v = features?.traverse_voltage ?? features?.voltage;
+      const vStr = v !== undefined ? v.toFixed(1) : '32.0';
+      const vStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        v !== undefined && (v < 25.0 || v > 40.0) ? 'WARNING' : 'NORMAL';
+
+      const motor = features?.motor_voltage;
+      const motorStr = motor !== undefined ? motor.toFixed(1) : '33.5';
+      const motorStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        motor !== undefined && (motor < 25.0 || motor > 40.0) ? 'WARNING' : 'NORMAL';
+
       return [
         {
           id: '6.1',
           code: '6.1',
           title: 'Traverse Voltage Check',
           parameter: 'Traverse Slew Rail Voltage',
-          value: '32.0',
+          value: vStr,
           unit: 'V',
           range: '25 – 40 V = IDEAL / NORMAL',
-          status: 'NORMAL',
+          status: vStatus,
           statusDetails: '25-40 V = IDEAL / NORMAL. Displayed strictly in Volts (V), not Amps.',
           details: 'Electrical voltage monitoring across the traverse tracking drive bus.',
         },
@@ -267,14 +371,15 @@ export const getSubsystemTechnicalItems = (subsystemCode: string): TechnicalSubI
           code: '6.2',
           title: 'Traverse Motor Voltage Check',
           parameter: 'Traverse Servomotor Voltage',
-          value: '33.5',
+          value: motorStr,
           unit: 'V',
           range: '25 – 40 V = IDEAL / NORMAL',
-          status: 'NORMAL',
+          status: motorStatus,
           statusDetails: '25-40 V = IDEAL / NORMAL. Displayed strictly in Volts (V), not Amps.',
           details: 'Fine-tracking servo motor voltage regulation on traverse mechanism.',
         },
       ];
+    }
 
     default:
       return [];
@@ -295,7 +400,17 @@ export const SubsystemCard: React.FC<SubsystemCardProps> = ({
   const [isExpanded, setIsExpanded] = useState<boolean>(initiallyExpanded);
   const [selectedSubItem, setSelectedSubItem] = useState<TechnicalSubItem | null>(null);
 
-  const hi = subsystem.current_health_index;
+  const { latestBatch } = useTelemetry();
+  const liveBatchItem = latestBatch.find(
+    (b) => b.subsystem_code === subsystem.code || b.subsystem_id === subsystem.id
+  );
+  const activeFeatures = {
+    ...(subsystem.latest_features || {}),
+    ...(liveBatchItem?.features || {}),
+  };
+
+  const hi = liveBatchItem?.health_index ?? subsystem.current_health_index;
+  const statusBand = liveBatchItem?.status_band ?? subsystem.status_band ?? 'HEALTHY';
   const isHealthy = hi >= 75;
   const isDegrading = hi >= 50 && hi < 75;
   const isSevere = hi < 50;
@@ -308,7 +423,7 @@ export const SubsystemCard: React.FC<SubsystemCardProps> = ({
 
   const strokeColor = isHealthy ? '#10b981' : isDegrading ? '#f59e0b' : '#ef4444';
 
-  const subItems = getSubsystemTechnicalItems(subsystem.code);
+  const subItems = getSubsystemTechnicalItems(subsystem.code, activeFeatures);
 
   return (
     <div className="bg-defense-900 border border-defense-700/80 rounded-lg p-4 flex flex-col justify-between hover:border-cyan-500/50 transition-all shadow-sm">
@@ -321,7 +436,7 @@ export const SubsystemCard: React.FC<SubsystemCardProps> = ({
             </div>
             <h3 className="font-semibold text-slate-100 text-sm mt-0.5">{subsystem.name}</h3>
           </div>
-          <StatusBadge status={subsystem.status_band || 'HEALTHY'} size="sm" />
+          <StatusBadge status={statusBand} size="sm" />
         </div>
 
         {/* Health Score Gauge Display */}
@@ -330,7 +445,7 @@ export const SubsystemCard: React.FC<SubsystemCardProps> = ({
             <div className="text-[11px] font-mono text-slate-400 uppercase">Health Index</div>
             <div className="flex items-baseline gap-2 mt-1">
               <span className={`text-3xl font-mono font-bold ${scoreColor}`}>
-                {subsystem.current_health_index.toFixed(1)}%
+                {hi.toFixed(1)}%
               </span>
               <div className="flex items-center text-xs font-mono">
                 {subsystem.trend_direction === 'DEGRADING' ? (
@@ -380,7 +495,15 @@ export const SubsystemCard: React.FC<SubsystemCardProps> = ({
                 <Sliders className="w-3.5 h-3.5 text-cyan-400" />
                 Technical Checks ({subItems.length} Sub-Items)
               </span>
-              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              <div className="flex items-center gap-2">
+                {Object.keys(activeFeatures).length > 0 && (
+                  <span className="text-[10px] text-emerald-400 bg-emerald-950/70 border border-emerald-800/90 px-1.5 py-0.5 rounded flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    LIVE
+                  </span>
+                )}
+                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
             </button>
 
             {isExpanded && (
@@ -408,7 +531,15 @@ export const SubsystemCard: React.FC<SubsystemCardProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-emerald-400 bg-defense-950 px-2 py-0.5 rounded border border-defense-800">
+                      <span
+                        className={`text-xs font-bold px-2 py-0.5 rounded border ${
+                          item.status === 'CRITICAL'
+                            ? 'text-red-400 bg-red-950/50 border-red-800'
+                            : item.status === 'WARNING'
+                            ? 'text-amber-400 bg-amber-950/50 border-amber-800'
+                            : 'text-emerald-400 bg-defense-950 border-defense-800'
+                        }`}
+                      >
                         {item.value} {item.unit !== 'STATE' && item.unit !== 'SWITCHES' ? item.unit : ''}
                       </span>
                       <Eye className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-400" />
@@ -458,7 +589,15 @@ export const SubsystemCard: React.FC<SubsystemCardProps> = ({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Telemetry Value:</span>
-                <span className="text-emerald-400 font-bold text-sm bg-defense-900 px-2 py-0.5 rounded border border-defense-800">
+                <span
+                  className={`font-bold text-sm px-2 py-0.5 rounded border ${
+                    selectedSubItem.status === 'CRITICAL'
+                      ? 'text-red-400 bg-red-950/50 border-red-800'
+                      : selectedSubItem.status === 'WARNING'
+                      ? 'text-amber-400 bg-amber-950/50 border-amber-800'
+                      : 'text-emerald-400 bg-defense-900 border-defense-800'
+                  }`}
+                >
                   {selectedSubItem.value} {selectedSubItem.unit}
                 </span>
               </div>
