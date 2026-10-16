@@ -4,9 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.all_models import RawReading, Subsystem, SensorChannel
+from app.models.all_models import RawReading, Subsystem, SensorChannel, BaselineSignature
 from app.schemas.schemas import RawReadingCreate, RawReadingResponse, BatchIngestionRequest, BatchIngestionResponse
 from app.services.buffer_service import edge_buffer_service
+from app.services.anomaly_detector import anomaly_detector
+from app.services.alert_service import alert_service
+from app.services.health_index_engine import health_index_engine
+from app.simulator.runner import simulator_runner
 
 router = APIRouter()
 
@@ -128,6 +132,85 @@ def ingest_batch_readings(
             errors.append(f"Error processing reading {r.reading_id}: {str(ex)}")
 
     db.commit()
+
+    # Process health evaluation and live broadcast for all updated subsystems
+    telemetry_batch = []
+    try:
+        subsystems_updated: dict = {}
+        for r in payload.readings:
+            sub_key = str(r.subsystem_id).upper()
+            feat_name = r.sensor_type or r.sensor_channel_id.replace(f"CH_{sub_key}_", "").lower()
+            if sub_key not in subsystems_updated:
+                subsystems_updated[sub_key] = {}
+            subsystems_updated[sub_key][feat_name] = r.value
+
+        for sub_key, features in subsystems_updated.items():
+            sub = db.query(Subsystem).filter(
+                (Subsystem.code == sub_key) | (Subsystem.id == sub_key)
+            ).first()
+            if not sub:
+                continue
+
+            active_baselines = {
+                b.feature_name: b for b in db.query(BaselineSignature).filter(
+                    BaselineSignature.subsystem_id == sub.id,
+                    BaselineSignature.is_active == True
+                ).all()
+            }
+
+            for feat_name, val in features.items():
+                base_sig = active_baselines.get(feat_name)
+                if base_sig:
+                    anomaly = anomaly_detector.evaluate_feature(
+                        subsystem_id=sub.id,
+                        subsystem_code=sub.code,
+                        feature_name=feat_name,
+                        current_value=val,
+                        baseline=base_sig,
+                        all_features=features
+                    )
+                    if anomaly:
+                        db.add(anomaly)
+                        alert_service.trigger_or_update_alert(
+                            db=db,
+                            subsystem_id=sub.id,
+                            feature_name=feat_name,
+                            severity=anomaly.severity,
+                            current_value=val,
+                            baseline_value=base_sig.baseline_mean,
+                            health_index_snapshot=sub.current_health_index,
+                            probable_issue=anomaly.fault_diagnosis
+                        )
+
+            if active_baselines:
+                hi_record = health_index_engine.record_health_index(
+                    db=db,
+                    subsystem=sub,
+                    current_features=features,
+                    baselines=active_baselines
+                )
+                telemetry_batch.append({
+                    "subsystem_id": sub.id,
+                    "subsystem_code": sub.code,
+                    "subsystem_name": sub.name,
+                    "health_index": hi_record.health_index,
+                    "status_band": hi_record.status_band,
+                    "features": features,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                })
+
+        db.commit()
+
+        if telemetry_batch:
+            simulator_runner.broadcast_telemetry({
+                "type": "TELEMETRY_UPDATE",
+                "batch": telemetry_batch,
+                "simulator_status": simulator_runner.get_status()
+            })
+    except Exception as ex:
+        # Resilience safeguard: broadcast errors should never crash ingestion response
+        errors.append(f"Live broadcast warning: {str(ex)}")
+
     return {
         "received_count": received,
         "accepted_count": accepted,

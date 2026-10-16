@@ -39,6 +39,14 @@ class SimulatorRunner:
         if callback in self._subscribers:
             self._subscribers.remove(callback)
 
+    def broadcast_telemetry(self, payload: Dict[str, Any]):
+        """Dispatches telemetry update payload to all active WebSocket subscribers."""
+        for sub_callback in list(self._subscribers):
+            try:
+                sub_callback(payload)
+            except Exception as ex:
+                logger.warning(f"Failed to dispatch to subscriber: {ex}")
+
     def get_status(self) -> Dict[str, Any]:
         return {
             "is_running": self.is_running,

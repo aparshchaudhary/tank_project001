@@ -1,0 +1,150 @@
+{
+  "batch_id": "BATCH_TURRET_TELEMETRY_SAMPLE",
+  "source": "TURRET_EDGE_SENSORS",
+  "readings": [
+    {
+      "reading_id": "READ_LRF_VOLT_001",
+      "sensor_channel_id": "CH_LRF_DETECTOR_VOLTAGE",
+      "subsystem_id": "LRF",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 11.5,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "ACTIVE_SURVEILLANCE",
+      "schema_version": "1.0",
+      "unit": "V",
+      "sensor_type": "detector_voltage"
+    },
+    {
+      "reading_id": "READ_ALG_CIRC_001",
+      "sensor_channel_id": "CH_ALG_CIRCUIT_SERVICEABILITY",
+      "subsystem_id": "ALG",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 1.0,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "READY_STATIONARY",
+      "schema_version": "1.0",
+      "unit": "STATE",
+      "sensor_type": "circuit_serviceability"
+    },
+    {
+      "reading_id": "READ_REC_DIST_001",
+      "sensor_channel_id": "CH_RECOIL_RECOIL_DISTANCE",
+      "subsystem_id": "RECOIL",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 276.5,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "DYNAMIC_RECOIL_BUFFER",
+      "schema_version": "1.0",
+      "unit": "mm",
+      "sensor_type": "recoil_distance"
+    },
+    {
+      "reading_id": "READ_REC_SPD_001",
+      "sensor_channel_id": "CH_RECOIL_RECOIL_SPEED",
+      "subsystem_id": "RECOIL",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 1.85,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "DYNAMIC_RECOIL_BUFFER",
+      "schema_version": "1.0",
+      "unit": "m/s",
+      "sensor_type": "recoil_speed"
+    },
+    {
+      "reading_id": "READ_REC_TIME_001",
+      "sensor_channel_id": "CH_RECOIL_RECOIL_TIME",
+      "subsystem_id": "RECOIL",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 0.32,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "DYNAMIC_RECOIL_BUFFER",
+      "schema_version": "1.0",
+      "unit": "s",
+      "sensor_type": "recoil_time"
+    },
+    {
+      "reading_id": "READ_REC_OIL_001",
+      "sensor_channel_id": "CH_RECOIL_OIL_LEVEL",
+      "subsystem_id": "RECOIL",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 93.8,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "DYNAMIC_RECOIL_BUFFER",
+      "schema_version": "1.0",
+      "unit": "%",
+      "sensor_type": "oil_level"
+    },
+    {
+      "reading_id": "READ_ELEV_K1_001",
+      "sensor_channel_id": "CH_ELEVATION_K1_VOLTAGE",
+      "subsystem_id": "ELEVATION",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 32.5,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "ELEVATION_SLEW",
+      "schema_version": "1.0",
+      "unit": "V",
+      "sensor_type": "k1_voltage"
+    },
+    {
+      "reading_id": "READ_ELEV_PSM_001",
+      "sensor_channel_id": "CH_ELEVATION_PSM_VOLTAGE",
+      "subsystem_id": "ELEVATION",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 33.0,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "ELEVATION_SLEW",
+      "schema_version": "1.0",
+      "unit": "V",
+      "sensor_type": "psm_voltage"
+    },
+    {
+      "reading_id": "READ_ELEV_PRESS_001",
+      "sensor_channel_id": "CH_ELEVATION_HYDRAULIC_PRESSURE",
+      "subsystem_id": "ELEVATION",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 125.0,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "ELEVATION_SLEW",
+      "schema_version": "1.0",
+      "unit": "MPa",
+      "sensor_type": "hydraulic_pressure"
+    },
+    {
+      "reading_id": "READ_AZIM_K1_001",
+      "sensor_channel_id": "CH_AZIMUTH_K1_VOLTAGE",
+      "subsystem_id": "AZIMUTH",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 32.5,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "AZIMUTH_SLEW",
+      "schema_version": "1.0",
+      "unit": "V",
+      "sensor_type": "k1_voltage"
+    },
+    {
+      "reading_id": "READ_AZIM_MP9_001",
+      "sensor_channel_id": "CH_AZIMUTH_MP9_VOLTAGE",
+      "subsystem_id": "AZIMUTH",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 31.8,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "AZIMUTH_SLEW",
+      "schema_version": "1.0",
+      "unit": "V",
+      "sensor_type": "mp9_voltage"
+    },
+    {
+      "reading_id": "READ_AZIM_MOT_001",
+      "sensor_channel_id": "CH_AZIMUTH_MOTOR_VOLTAGE",
+      "subsystem_id": "AZIMUTH",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 34.0,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "AZIMUTH_SLEW",
+      "schema_version": "1.0",
+      "unit": "V",
+      "sensor_type": "motor_voltage"
+    }
+  ]
+}
