@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Subsystem } from '../../types';
 import { StatusBadge } from './StatusBadge';
 import { useTelemetry } from '../../context/TelemetryContext';
@@ -6,6 +6,12 @@ import {
   TrendingDown,
   Minus,
   ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  Sliders,
+  Eye,
+  ShieldCheck,
+  X,
 } from 'lucide-react';
 
 export interface TechnicalSubItem {
@@ -338,13 +344,17 @@ export const getSubsystemTechnicalItems = (
 interface SubsystemCardProps {
   subsystem: Subsystem;
   onDrillDown: (id: string) => void;
-  initiallyExpanded?: boolean;
+  showTechnicalChecks?: boolean;
 }
 
 export const SubsystemCard: React.FC<SubsystemCardProps> = ({
   subsystem,
   onDrillDown,
+  showTechnicalChecks = false,
 }) => {
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [selectedSubItem, setSelectedSubItem] = useState<TechnicalSubItem | null>(null);
+
   const { latestBatch } = useTelemetry();
   const liveBatchItem = latestBatch.find(
     (b) => b.subsystem_code === subsystem.code || b.subsystem_id === subsystem.id
@@ -448,6 +458,73 @@ export const SubsystemCard: React.FC<SubsystemCardProps> = ({
             </span>
           </div>
         )}
+
+        {/* Interactive Expandable Sub-Items Section (Shown in Subsystems section only) */}
+        {showTechnicalChecks && subItems.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-defense-800 font-mono">
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="w-full flex items-center justify-between text-xs py-1 px-2 rounded bg-defense-950 hover:bg-defense-800/80 text-cyan-400 border border-defense-800 transition-colors"
+            >
+              <span className="font-semibold flex items-center gap-1.5">
+                <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+                Technical Checks ({subItems.length} Sub-Items)
+              </span>
+              <div className="flex items-center gap-2">
+                {Object.keys(activeFeatures).length > 0 && (
+                  <span className="text-[10px] text-emerald-400 bg-emerald-950/70 border border-emerald-800/90 px-1.5 py-0.5 rounded flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    LIVE
+                  </span>
+                )}
+                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
+            </button>
+
+            {isExpanded && (
+              <div className="mt-2.5 space-y-1.5 bg-defense-950/70 p-2 rounded border border-defense-800/80">
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                  <span>Hierarchical Sub-Items</span>
+                  <span className="text-cyan-400">Click to Inspect</span>
+                </div>
+                {subItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setSelectedSubItem(item)}
+                    className="w-full text-left p-2 rounded bg-defense-900 hover:bg-cyan-950/40 border border-defense-800 hover:border-cyan-600/50 transition-all flex items-center justify-between group"
+                  >
+                    <div className="flex-1 pr-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-cyan-400 font-bold text-xs">{item.code}</span>
+                        <span className="text-slate-200 text-xs font-medium group-hover:text-cyan-200">
+                          {item.title}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
+                        <span>Range: {item.range}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-xs font-bold px-2 py-0.5 rounded border ${
+                          item.status === 'CRITICAL'
+                            ? 'text-red-400 bg-red-950/50 border-red-800'
+                            : item.status === 'WARNING'
+                            ? 'text-amber-400 bg-amber-950/50 border-amber-800'
+                            : 'text-emerald-400 bg-defense-950 border-defense-800'
+                        }`}
+                      >
+                        {item.value} {item.unit !== 'STATE' && item.unit !== 'SWITCHES' ? item.unit : ''}
+                      </span>
+                      <Eye className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-400" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Drill-down action */}
@@ -458,6 +535,105 @@ export const SubsystemCard: React.FC<SubsystemCardProps> = ({
         <span>Telemetry Drill-Down</span>
         <ArrowRight className="w-3.5 h-3.5" />
       </button>
+
+      {/* Sub-Item Technical Inspection Modal */}
+      {selectedSubItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 font-mono">
+          <div className="bg-defense-900 border border-defense-700 rounded-lg max-w-lg w-full p-5 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-defense-800">
+              <div className="flex items-center gap-2 text-cyan-400 font-bold text-sm">
+                <ShieldCheck className="w-4 h-4" />
+                <span>TECHNICAL CHECK INSPECTION [{selectedSubItem.code}]</span>
+              </div>
+              <button
+                onClick={() => setSelectedSubItem(null)}
+                className="text-slate-400 hover:text-slate-100 p-1 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="my-4 space-y-3 text-xs bg-defense-950 p-3.5 rounded border border-defense-800">
+              <div className="flex justify-between items-center pb-2 border-b border-defense-850">
+                <span className="text-slate-400 uppercase">Check Name:</span>
+                <span className="text-slate-100 font-bold text-sm">{selectedSubItem.title}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Parameter:</span>
+                <span className="text-cyan-300">{selectedSubItem.parameter}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Telemetry Value:</span>
+                <span
+                  className={`font-bold text-sm px-2 py-0.5 rounded border ${
+                    selectedSubItem.status === 'CRITICAL'
+                      ? 'text-red-400 bg-red-950/50 border-red-800'
+                      : selectedSubItem.status === 'WARNING'
+                      ? 'text-amber-400 bg-amber-950/50 border-amber-800'
+                      : 'text-emerald-400 bg-defense-900 border-defense-800'
+                  }`}
+                >
+                  {selectedSubItem.value} {selectedSubItem.unit}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Specified Range:</span>
+                <span className="text-slate-200">{selectedSubItem.range}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Status Assessment:</span>
+                <StatusBadge status={selectedSubItem.status} size="sm" />
+              </div>
+              <div className="pt-2 border-t border-defense-850">
+                <span className="text-slate-400 block mb-1">Operational Rule / Thresholds:</span>
+                <div className="text-[11px] text-amber-300 bg-defense-900/80 p-2 rounded border border-defense-800 leading-relaxed">
+                  {selectedSubItem.statusDetails}
+                </div>
+              </div>
+              <div>
+                <span className="text-slate-400 block mb-1">Technical Description:</span>
+                <p className="text-slate-300 leading-relaxed text-[11px]">{selectedSubItem.details}</p>
+              </div>
+
+              {/* Six Microswitches List for ALG */}
+              {selectedSubItem.subSwitches && selectedSubItem.subSwitches.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-defense-800">
+                  <div className="text-slate-300 font-semibold mb-2 flex items-center justify-between">
+                    <span>6-Microswitch Circuit Status:</span>
+                    <span className="text-[10px] text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800">
+                      Current Threshold: TBD (Configurable)
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {selectedSubItem.subSwitches.map((sw) => (
+                      <div
+                        key={sw.code}
+                        className="bg-defense-900 p-2 rounded border border-defense-800 flex flex-col justify-between"
+                      >
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-cyan-400 font-bold">{sw.code}</span>
+                          <span className="text-emerald-400 text-[10px] font-semibold">{sw.status}</span>
+                        </div>
+                        <div className="text-slate-200 font-medium text-[11px] mt-1">{sw.name}</div>
+                        <div className="text-slate-400 text-[10px] mt-1">Threshold: {sw.threshold}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2 border-t border-defense-800">
+              <button
+                onClick={() => setSelectedSubItem(null)}
+                className="px-4 py-1.5 rounded bg-defense-800 hover:bg-defense-700 text-slate-200 text-xs transition-colors"
+              >
+                Close Inspection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

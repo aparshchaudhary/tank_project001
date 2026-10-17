@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { SubsystemDetail, HealthIndexHistoryItem } from '../types';
 import { api } from '../services/api';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { getSubsystemTechnicalItems } from '../components/common/SubsystemCard';
 import {
   ArrowLeft,
   Activity,
+  Sliders,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -29,7 +32,7 @@ export const SubsystemDetailPage: React.FC<SubsystemDetailPageProps> = ({
   const [detail, setDetail] = useState<SubsystemDetail | null>(null);
   const [history, setHistory] = useState<HealthIndexHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'TELEMETRY' | 'ANOMALIES'>('TELEMETRY');
+  const [activeTab, setActiveTab] = useState<'CHECKS' | 'TELEMETRY' | 'ANOMALIES'>('CHECKS');
 
   const fetchData = async () => {
     try {
@@ -177,6 +180,7 @@ export const SubsystemDetailPage: React.FC<SubsystemDetailPageProps> = ({
       {/* Tabs */}
       <div className="border-b border-defense-700 font-mono text-xs flex gap-4">
         {[
+          { id: 'CHECKS', label: `Technical Checks (${getSubsystemTechnicalItems(detail.code, detail.latest_features).length})` },
           { id: 'TELEMETRY', label: `Sensors (${detail.sensors.length})` },
           { id: 'ANOMALIES', label: `Anomalies (${detail.recent_anomalies.length})` },
         ].map((tab) => (
@@ -193,6 +197,76 @@ export const SubsystemDetailPage: React.FC<SubsystemDetailPageProps> = ({
           </button>
         ))}
       </div>
+
+      {/* Tab 0: Technical Checks */}
+      {activeTab === 'CHECKS' && (
+        <div className="space-y-4 font-mono text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {getSubsystemTechnicalItems(detail.code, detail.latest_features).map((item) => (
+              <div
+                key={item.id}
+                className="bg-defense-900 border border-defense-700/80 rounded-lg p-4 space-y-3 flex flex-col justify-between shadow-sm"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2 border-b border-defense-800 pb-2">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-cyan-400 font-bold">{item.code}</span>
+                        <h4 className="font-semibold text-slate-100 text-xs">{item.title}</h4>
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">{item.parameter}</div>
+                    </div>
+                    <StatusBadge status={item.status} size="sm" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 bg-defense-950 p-2.5 rounded border border-defense-800 text-[11px] mt-3">
+                    <div>
+                      <span className="text-slate-400 uppercase block text-[10px]">Telemetry Value:</span>
+                      <span
+                        className={`font-bold text-sm ${
+                          item.status === 'CRITICAL'
+                            ? 'text-red-400'
+                            : item.status === 'WARNING'
+                            ? 'text-amber-400'
+                            : 'text-emerald-400'
+                        }`}
+                      >
+                        {item.value} {item.unit !== 'STATE' && item.unit !== 'SWITCHES' ? item.unit : ''}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 uppercase block text-[10px]">Specified Range:</span>
+                      <span className="text-slate-200 font-medium">{item.range}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] text-slate-300 bg-defense-950/60 p-2.5 rounded border border-defense-800 mt-3">
+                    <span className="text-slate-400 block mb-0.5 uppercase text-[10px]">Operational Rule:</span>
+                    <p className="text-amber-300">{item.statusDetails}</p>
+                  </div>
+
+                  {item.subSwitches && item.subSwitches.length > 0 && (
+                    <div className="pt-2 border-t border-defense-800 mt-3">
+                      <span className="text-slate-400 block mb-1 text-[10px] uppercase">Microswitch Status:</span>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {item.subSwitches.map((sw) => (
+                          <div key={sw.code} className="bg-defense-950 p-1.5 rounded border border-defense-800 text-[10px]">
+                            <div className="flex justify-between items-center">
+                              <span className="text-cyan-400 font-bold">{sw.code}</span>
+                              <span className="text-emerald-400">{sw.status}</span>
+                            </div>
+                            <div className="text-slate-300 truncate mt-0.5">{sw.name}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Tab 1: Sensor Channels */}
       {activeTab === 'TELEMETRY' && (

@@ -89,6 +89,7 @@ export const SubsystemsPage: React.FC<SubsystemsPageProps> = ({ onDrillDown }) =
             key={sub.id}
             subsystem={sub}
             onDrillDown={onDrillDown}
+            showTechnicalChecks={true}
           />
         ))}
       </div>
