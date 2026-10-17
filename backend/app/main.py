@@ -190,9 +190,23 @@ if static_dir:
 
         file_target = os.path.join(static_dir, full_path)
         if full_path and os.path.isfile(file_target):
-            return FileResponse(file_target)
+            headers = {}
+            if file_target.endswith(".html"):
+                headers = {
+                    "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
+                }
+            return FileResponse(file_target, headers=headers)
 
-        return FileResponse(os.path.join(static_dir, "index.html"))
+        return FileResponse(
+            os.path.join(static_dir, "index.html"),
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            }
+        )
 
 if __name__ == "__main__":
     import uvicorn
