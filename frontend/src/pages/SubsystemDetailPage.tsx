@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { SubsystemDetail, HealthIndexHistoryItem, MaintenanceEvent } from '../types';
+import { SubsystemDetail, HealthIndexHistoryItem } from '../types';
 import { api } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import { StatusBadge } from '../components/common/StatusBadge';
 import {
   ArrowLeft,
   Activity,
-  Cpu,
-  Shield,
-  Clock,
-  RotateCcw,
-  Wrench,
-  Download,
-  Sliders,
-  AlertCircle,
-  HelpCircle
 } from 'lucide-react';
 import {
   AreaChart,
@@ -35,28 +25,20 @@ interface SubsystemDetailPageProps {
 export const SubsystemDetailPage: React.FC<SubsystemDetailPageProps> = ({
   subsystemId,
   onBack,
-  onOpenMaintenanceModal,
 }) => {
-  const { role } = useAuth();
   const [detail, setDetail] = useState<SubsystemDetail | null>(null);
   const [history, setHistory] = useState<HealthIndexHistoryItem[]>([]);
-  const [maintenance, setMaintenance] = useState<MaintenanceEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'TELEMETRY' | 'BASELINES' | 'ANOMALIES' | 'MAINTENANCE' | 'WEIGHTS'>('TELEMETRY');
-  const [featureWeights, setFeatureWeights] = useState<Record<string, number>>({});
-  const [weightsSaving, setWeightsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'TELEMETRY' | 'ANOMALIES'>('TELEMETRY');
 
   const fetchData = async () => {
     try {
-      const [subData, histData, maintData] = await Promise.all([
+      const [subData, histData] = await Promise.all([
         api.getSubsystemDetail(subsystemId),
         api.getHealthHistory(subsystemId, 40),
-        api.getMaintenanceEvents(subsystemId),
       ]);
       setDetail(subData);
       setHistory(histData);
-      setMaintenance(maintData);
-      setFeatureWeights(subData.feature_weights || {});
     } catch (e) {
       console.error('Failed to load subsystem detail', e);
     } finally {
@@ -69,41 +51,6 @@ export const SubsystemDetailPage: React.FC<SubsystemDetailPageProps> = ({
     const interval = setInterval(fetchData, 4000);
     return () => clearInterval(interval);
   }, [subsystemId]);
-
-  const handleSaveWeights = async () => {
-    setWeightsSaving(true);
-    try {
-      await api.updateFeatureWeights(subsystemId, featureWeights);
-      await fetchData();
-    } catch (e) {
-      alert('Failed to update weights: ' + e);
-    } finally {
-      setWeightsSaving(false);
-    }
-  };
-
-  const handleRebaseline = async () => {
-    if (!confirm('Re-baseline this subsystem using current nominal telemetry? This action will be audited.')) return;
-    try {
-      await api.rebaseline(subsystemId, 'Technician requested scheduled rebaselining');
-      await fetchData();
-      alert('Re-baselining completed successfully.');
-    } catch (e) {
-      alert('Rebaselining failed: ' + e);
-    }
-  };
-
-  const handleExportData = () => {
-    if (!detail) return;
-    const jsonStr = JSON.stringify(detail, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `turret_${detail.code}_telemetry_export.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   if (isLoading || !detail) {
     return (
@@ -135,37 +82,6 @@ export const SubsystemDetailPage: React.FC<SubsystemDetailPageProps> = ({
             </div>
             <h1 className="text-lg font-bold text-slate-100">{detail.name}</h1>
           </div>
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex items-center gap-3 text-xs">
-          <button
-            onClick={handleExportData}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-defense-900 border border-defense-700 hover:bg-defense-800 text-slate-300"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Export JSON
-          </button>
-
-          {role === 'ADMIN' && (
-            <button
-              onClick={handleRebaseline}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-cyan-950/80 border border-cyan-700 text-cyan-300 hover:bg-cyan-900"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Re-Baseline
-            </button>
-          )}
-
-          {(role === 'TECHNICIAN' || role === 'ADMIN') && (
-            <button
-              onClick={() => onOpenMaintenanceModal(detail.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30"
-            >
-              <Wrench className="w-3.5 h-3.5" />
-              Log Work Order
-            </button>
-          )}
         </div>
       </div>
 
@@ -262,10 +178,7 @@ export const SubsystemDetailPage: React.FC<SubsystemDetailPageProps> = ({
       <div className="border-b border-defense-700 font-mono text-xs flex gap-4">
         {[
           { id: 'TELEMETRY', label: `Sensors (${detail.sensors.length})` },
-          { id: 'BASELINES', label: `Healthy Baselines (${detail.active_baselines.length})` },
           { id: 'ANOMALIES', label: `Anomalies (${detail.recent_anomalies.length})` },
-          { id: 'MAINTENANCE', label: `Maintenance Logs (${maintenance.length})` },
-          { id: 'WEIGHTS', label: 'Feature Weights & Config' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -315,37 +228,7 @@ export const SubsystemDetailPage: React.FC<SubsystemDetailPageProps> = ({
         </div>
       )}
 
-      {/* Tab 2: Baselines */}
-      {activeTab === 'BASELINES' && (
-        <div className="bg-defense-900 border border-defense-700/80 rounded-lg overflow-hidden font-mono text-xs">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-defense-700 text-slate-400 bg-defense-950/60">
-                <th className="py-2.5 px-4">FEATURE</th>
-                <th className="py-2.5 px-4">BASELINE MEAN (μ)</th>
-                <th className="py-2.5 px-4">STD DEV (σ)</th>
-                <th className="py-2.5 px-4">SAMPLE COUNT</th>
-                <th className="py-2.5 px-4">ESTABLISHED DATE</th>
-                <th className="py-2.5 px-4">VERSION</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-defense-800">
-              {detail.active_baselines.map((b) => (
-                <tr key={b.id} className="hover:bg-defense-850">
-                  <td className="py-2.5 px-4 text-cyan-300 font-semibold">{b.feature_name}</td>
-                  <td className="py-2.5 px-4 text-slate-100">{b.baseline_mean.toFixed(4)}</td>
-                  <td className="py-2.5 px-4 text-slate-300">{b.baseline_stddev.toFixed(4)}</td>
-                  <td className="py-2.5 px-4 text-slate-400">{b.sample_count}</td>
-                  <td className="py-2.5 px-4 text-slate-300">{new Date(b.established_at).toLocaleDateString()}</td>
-                  <td className="py-2.5 px-4 text-slate-400">{b.version}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Tab 3: Anomalies */}
+      {/* Tab 2: Anomalies */}
       {activeTab === 'ANOMALIES' && (
         <div className="bg-defense-900 border border-defense-700/80 rounded-lg overflow-hidden font-mono text-xs">
           <table className="w-full text-left border-collapse">
@@ -382,116 +265,6 @@ export const SubsystemDetailPage: React.FC<SubsystemDetailPageProps> = ({
               )}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Tab 4: Maintenance Logs */}
-      {activeTab === 'MAINTENANCE' && (
-        <div className="bg-defense-900 border border-defense-700/80 rounded-lg overflow-hidden font-mono text-xs">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-defense-700 text-slate-400 bg-defense-950/60">
-                <th className="py-2.5 px-4">DATE</th>
-                <th className="py-2.5 px-4">TYPE</th>
-                <th className="py-2.5 px-4">PRIORITY</th>
-                <th className="py-2.5 px-4">DESCRIPTION</th>
-                <th className="py-2.5 px-4">DIRECTIVES / RECOMMENDATIONS</th>
-                <th className="py-2.5 px-4">TECHNICIAN</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-defense-800">
-              {maintenance.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-6 text-center text-slate-400">
-                    No maintenance events recorded.
-                  </td>
-                </tr>
-              ) : (
-                maintenance.map((m) => (
-                  <tr key={m.id} className="hover:bg-defense-850">
-                    <td className="py-2.5 px-4 text-slate-300">{new Date(m.created_at).toLocaleDateString()}</td>
-                    <td className="py-2.5 px-4 text-slate-100 font-semibold">{m.event_type}</td>
-                    <td className="py-2.5 px-4">
-                      <span className={`px-2 py-0.5 rounded text-[10px] ${
-                        m.maintenance_priority === 'IMMEDIATE'
-                          ? 'bg-red-950 text-red-400 border border-red-800'
-                          : m.maintenance_priority === 'HIGH'
-                          ? 'bg-amber-950 text-amber-400 border border-amber-800'
-                          : 'bg-defense-800 text-slate-300'
-                      }`}>
-                        {m.maintenance_priority}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-4 text-slate-200">{m.description}</td>
-                    <td className="py-2.5 px-4 text-cyan-300">{m.recommendations || 'Standard service inspection'}</td>
-                    <td className="py-2.5 px-4 text-slate-400">{m.technician_name || 'Service Tech'}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Tab 5: Feature Weights (Configurable by Admin) */}
-      {activeTab === 'WEIGHTS' && (
-        <div className="bg-defense-900 border border-defense-700/80 rounded-lg p-6 font-mono text-xs max-w-2xl">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-defense-800">
-            <div>
-              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-cyan-400" />
-                TRANSPARENT HEALTH INDEX WEIGHTS CONFIGURATION
-              </h3>
-              <p className="text-slate-400 mt-1">
-                Health Index formula: HI = 100 &times; (1 - &Sigma; w_i &times; dev_i). Adjust weighting coefficients.
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {Object.keys(featureWeights).length === 0 ? (
-              <p className="text-slate-400">All features currently weighted equally (1.0 default coefficient).</p>
-            ) : (
-              Object.entries(featureWeights).map(([feat, weight]) => (
-                <div key={feat} className="flex items-center justify-between gap-4">
-                  <span className="text-slate-300 font-semibold">{feat}</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0.1"
-                      max="10.0"
-                      disabled={role !== 'ADMIN'}
-                      value={weight}
-                      onChange={(e) =>
-                        setFeatureWeights({
-                          ...featureWeights,
-                          [feat]: parseFloat(e.target.value) || 1.0,
-                        })
-                      }
-                      className="w-20 bg-defense-950 border border-defense-700 rounded px-2 py-1 text-slate-200 disabled:opacity-50"
-                    />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {role === 'ADMIN' ? (
-            <div className="mt-6 pt-4 border-t border-defense-800 flex justify-end">
-              <button
-                onClick={handleSaveWeights}
-                disabled={weightsSaving}
-                className="px-4 py-2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 transition-colors"
-              >
-                {weightsSaving ? 'Saving Weights...' : 'Save Configuration'}
-              </button>
-            </div>
-          ) : (
-            <p className="mt-4 text-slate-400 italic">
-              * Administrator permissions required to modify weighting coefficients.
-            </p>
-          )}
         </div>
       )}
     </div>

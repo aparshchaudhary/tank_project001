@@ -12,15 +12,22 @@ router = APIRouter()
 
 @router.get("/overview", response_model=SystemOverviewResponse)
 def get_system_overview(db: Session = Depends(get_db)):
-    subsystems = db.query(Subsystem).all()
-    sensors_count = db.query(SensorChannel).filter(SensorChannel.is_active == True).count()
+    SUBSYSTEM_ORDER = ["LRF", "ALG", "RECOIL", "ELEVATION", "AZIMUTH"]
+    subsystems = [s for s in db.query(Subsystem).all() if s.code in SUBSYSTEM_ORDER]
+    subsystems.sort(key=lambda s: SUBSYSTEM_ORDER.index(s.code))
+    valid_sub_ids = [s.id for s in subsystems]
+
+    sensors_count = db.query(SensorChannel).filter(
+        SensorChannel.is_active == True,
+        SensorChannel.subsystem_id.in_(valid_sub_ids)
+    ).count()
     
-    active_alerts = db.query(Alert).filter(Alert.status.in_(["ACTIVE", "ACKNOWLEDGED"])).order_by(Alert.timestamp.desc()).all()
+    active_alerts = db.query(Alert).filter(
+        Alert.status.in_(["ACTIVE", "ACKNOWLEDGED"]),
+        Alert.subsystem_id.in_(valid_sub_ids)
+    ).order_by(Alert.timestamp.desc()).all()
     warnings = [a for a in active_alerts if a.severity == "WARNING"]
     criticals = [a for a in active_alerts if a.severity == "CRITICAL"]
-
-    SUBSYSTEM_ORDER = ["LRF", "ALG", "RECOIL", "ELEVATION", "AZIMUTH", "TRAVERSE"]
-    subsystems.sort(key=lambda s: SUBSYSTEM_ORDER.index(s.code) if s.code in SUBSYSTEM_ORDER else 99)
 
     subsystems_responses = []
     healthy_count = 0

@@ -56,13 +56,13 @@ class AnomalyDetector:
 
         # LRF subsystem rules
         if subsystem_code == "LRF" or "detector_voltage" in feature_name:
-            v_det = all_features.get("detector_voltage", current_val if "current_val" in locals() else 11.5)
-            if v_det < 10.5:
-                return "LRF Detector Voltage Undervoltage Alert (<10.5 V)"
-            elif v_det > 12.5:
-                return "LRF Detector Voltage Overvoltage Critical Alert (>12.5 V)"
-            elif (10.5 <= v_det < 11.0) or (12.0 < v_det <= 12.5):
-                return "LRF Detector Voltage Warning Band (Marginal 10.5-11V / 12-12.5V)"
+            v_det = all_features.get("detector_voltage", current_val if "current_val" in locals() else 11.0)
+            if v_det < 9.5:
+                return "LRF Detector Voltage Undervoltage Alert (<9.5 V)"
+            elif v_det > 12.0:
+                return "LRF Detector Voltage Overvoltage Critical Alert (>12.0 V)"
+            elif 9.5 <= v_det <= 12.0:
+                return "NORMAL OPERATION"
 
         # Elevation subsystem rules
         if subsystem_code == "ELEVATION":
@@ -75,10 +75,6 @@ class AnomalyDetector:
         # Azimuth subsystem rules
         if subsystem_code == "AZIMUTH" and "voltage" in feature_name:
             return "Azimuth Drive Contactor / Bus Voltage Out of Ideal 25-40V Range"
-
-        # Traverse subsystem rules
-        if subsystem_code == "TRAVERSE" and "voltage" in feature_name:
-            return "Traverse Drive Voltage Out of Ideal 25-40V Range"
 
         # ALG subsystem rules
         if subsystem_code == "ALG":
@@ -155,13 +151,13 @@ class AnomalyDetector:
             elif current_value < 250.0:
                 severity = "WARNING" # Out of range safe handling
         elif feature_name in ["detector_voltage", "lrf_voltage"]:
-            if 11.0 <= current_value <= 12.0:
+            if 9.5 <= current_value <= 12.0:
                 severity = "NORMAL"
-            elif (10.5 <= current_value < 11.0) or (12.0 < current_value <= 12.5):
+            elif (9.0 <= current_value < 9.5) or (12.0 < current_value <= 12.5):
                 severity = "WARNING"
             else:
                 severity = "CRITICAL"
-        elif "voltage" in feature_name and subsystem_code in ["ELEVATION", "AZIMUTH", "TRAVERSE"]:
+        elif "voltage" in feature_name and subsystem_code in ["ELEVATION", "AZIMUTH"]:
             if 25.0 <= current_value <= 40.0:
                 severity = "NORMAL"
             elif (20.0 <= current_value < 25.0) or (40.0 < current_value <= 45.0):

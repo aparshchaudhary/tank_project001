@@ -54,7 +54,7 @@ class SyntheticDataGenerator:
                     val = 0.0 # Stuck at zero
 
         elif scenario == SimulationScenario.B_MOTOR_DEGRADATION or scenario == "B. MOTOR DEGRADATION":
-            if subsystem_code in ["AZIMUTH", "ELEVATION", "TRAVERSE"]:
+            if subsystem_code in ["AZIMUTH", "ELEVATION"]:
                 if "voltage" in feature_name:
                     # Voltage drop / fluctuation outside ideal 25-40V band
                     val -= fault_severity * 12.0 + (fault_severity * 3.0 * math.sin(2.0 * math.pi * 1.5 * t))

@@ -92,7 +92,7 @@ def seed_database():
                     "code": "LRF",
                     "name": "Laser Range Finder (LRF)",
                     "category": "Electro-Optical",
-                    "description": "Precision laser range determination, detector voltage monitoring (10.5-12.5V), and optical path health.",
+                    "description": "Precision laser range determination, detector voltage monitoring (9.5-12.0V), and optical path health.",
                     "hours": 280.0,
                     "cycles": 9500,
                     "initial_hi": 96.5
@@ -132,15 +132,6 @@ def seed_database():
                     "hours": 340.0,
                     "cycles": 12400,
                     "initial_hi": 93.0
-                },
-                {
-                    "code": "TRAVERSE",
-                    "name": "Traverse Drive Subsystem",
-                    "category": "Electrical",
-                    "description": "Traverse tracking drive servo motor and electrical bus voltage regulation (25-40V).",
-                    "hours": 260.0,
-                    "cycles": 8900,
-                    "initial_hi": 95.0
                 }
             ]
 
@@ -282,10 +273,10 @@ def seed_database():
                     feature_name="detector_voltage",
                     timestamp=now - timedelta(hours=4),
                     severity="WARNING",
-                    current_value=10.85,
-                    baseline_value=11.5,
+                    current_value=9.35,
+                    baseline_value=11.0,
                     health_index_snapshot=93.2,
-                    probable_issue="LRF detector voltage at 10.85 V entered low warning band (10.5-11.0 V).",
+                    probable_issue="LRF detector voltage at 9.35 V entered low warning band (9.0-9.5 V).",
                     detection_method="Voltage Threshold Engine",
                     status="ACKNOWLEDGED",
                     acknowledged_by_id=tech_user.id if tech_user else None,

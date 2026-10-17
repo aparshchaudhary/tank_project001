@@ -30,7 +30,7 @@ interface TelemetryPoint {
   recoil_speed: number;       // m/s
   recoil_distance: number;    // mm (250-300 normal, 300-350 warning, >350 critical)
   oil_level: number;          // %
-  lrf_voltage: number;        // V (10.5 - 12.5 V, nominal 11.0-12.0)
+  lrf_voltage: number;        // V (9.5 - 12.0 V, nominal band)
   alg_circuit: number;        // 1.0 continuous, 0.0 interrupted
   elevation_voltage: number;  // V (25-40 V normal)
   azimuth_voltage: number;    // V (25-40 V normal)
@@ -109,14 +109,10 @@ export const LiveMonitoringPage: React.FC = () => {
     recoilDist > 350.0 ? 'CRITICAL' : recoilDist > 300.0 ? 'WARNING' : recoilDist < 250.0 ? 'WARNING' : 'NORMAL';
 
   // LRF voltage status calculation
-  const lrfVoltVal = lrfData?.features.detector_voltage ?? 11.5;
+  const lrfVoltVal = lrfData?.features.detector_voltage ?? 11.0;
   const lrfVoltStatus =
-    lrfVoltVal < 10.5
+    lrfVoltVal < 9.5 || lrfVoltVal > 12.0
       ? 'CRITICAL'
-      : lrfVoltVal > 12.5
-      ? 'CRITICAL'
-      : lrfVoltVal < 11.0 || lrfVoltVal > 12.0
-      ? 'WARNING'
       : 'NORMAL';
 
   return (
@@ -217,17 +213,15 @@ export const LiveMonitoringPage: React.FC = () => {
               <span className="text-xs font-normal text-slate-400">V (Voltage)</span>
             </div>
             <div className="text-[11px] text-slate-400 mt-1 flex justify-between">
-              <span>Expected: 10.5 – 12.5 V</span>
+              <span>Expected: 9.5 – 12.0 V</span>
               <span
                 className={
                   lrfVoltStatus === 'CRITICAL'
                     ? 'text-red-400 font-bold'
-                    : lrfVoltStatus === 'WARNING'
-                    ? 'text-amber-400'
                     : 'text-emerald-400'
                 }
               >
-                {lrfVoltStatus === 'NORMAL' ? '11-12 V OK' : lrfVoltStatus}
+                {lrfVoltStatus === 'NORMAL' ? '9.5-12 V OK' : lrfVoltStatus}
               </span>
             </div>
           </div>
@@ -361,11 +355,11 @@ export const LiveMonitoringPage: React.FC = () => {
               <LineChart data={historyBuffer}>
                 <CartesianGrid strokeDasharray="2 2" stroke="#1f2b45" />
                 <XAxis dataKey="time" stroke="#64748b" tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                <YAxis domain={[9.5, 13.5]} stroke="#64748b" tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                <YAxis domain={[8.5, 13.5]} stroke="#64748b" tick={{ fontSize: 10, fill: '#94a3b8' }} />
                 <Tooltip contentStyle={{ backgroundColor: '#0b101b', borderColor: '#1f2b45', fontSize: '11px', fontFamily: 'monospace' }} />
-                <ReferenceLine y={10.5} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'Alert <10.5V', fill: '#ef4444', fontSize: 10 }} />
-                <ReferenceLine y={11.5} stroke="#10b981" strokeDasharray="3 3" label={{ value: 'Nominal 11.5V', fill: '#10b981', fontSize: 10 }} />
-                <ReferenceLine y={12.5} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'Critical >12.5V', fill: '#ef4444', fontSize: 10 }} />
+                <ReferenceLine y={9.5} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'Alert <9.5V', fill: '#ef4444', fontSize: 10 }} />
+                <ReferenceLine y={10.75} stroke="#10b981" strokeDasharray="3 3" label={{ value: 'Nominal 10.75V', fill: '#10b981', fontSize: 10 }} />
+                <ReferenceLine y={12.0} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'Critical >12.0V', fill: '#ef4444', fontSize: 10 }} />
                 <Line type="monotone" dataKey="lrf_voltage" stroke="#00f0ff" strokeWidth={2} dot={false} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>

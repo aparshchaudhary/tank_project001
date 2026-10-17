@@ -46,9 +46,5 @@ NOMINAL_BASELINES: Dict[str, Dict[str, Any]] = {
         "mp9_voltage": {"mean": 31.8, "std": 1.1, "unit": "V"},
         "motor_voltage": {"mean": 34.0, "std": 1.4, "unit": "V"},
     },
-    "TRAVERSE": {
-        "traverse_voltage": {"mean": 32.0, "std": 1.2, "unit": "V"},
-        "motor_voltage": {"mean": 33.5, "std": 1.3, "unit": "V"},
-    },
 }
 

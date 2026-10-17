@@ -250,7 +250,7 @@ export const SimulatorPage: React.FC = () => {
             >
               <option value="STANDBY">STANDBY (IDLE LAB TEST)</option>
               <option value="SLEW_TRACKING">SLEW_TRACKING (AZIMUTH ROTATION)</option>
-              <option value="HIGH_SPEED_TRAVERSE">HIGH_SPEED_TRAVERSE (FULL POWER)</option>
+              <option value="FULL_POWER_SLEW">FULL_POWER_SLEW (FULL POWER)</option>
               <option value="ELEVATION_CYCLING">ELEVATION_CYCLING (HYDRAULIC LOAD)</option>
             </select>
           </div>

@@ -6,7 +6,6 @@ import { StatusBadge } from '../components/common/StatusBadge';
 import { useTelemetry } from '../context/TelemetryContext';
 import {
   Activity,
-  AlertTriangle,
   CheckCircle2,
   Cpu,
   Layers,
@@ -277,65 +276,6 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onDrillDown, onNavig
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
-      </div>
-
-      {/* Recent Alerts Feed Table */}
-      <div className="bg-defense-900 border border-defense-700/80 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <h3 className="font-mono text-xs font-bold text-slate-100 tracking-wider uppercase">
-              ACTIVE DEFENSE CONDITION ALERTS
-            </h3>
-          </div>
-          <button
-            onClick={onNavigateAlerts}
-            className="text-xs font-mono text-cyan-400 hover:underline"
-          >
-            Open Full Alert Workspace →
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left font-mono text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-defense-700 text-slate-400 bg-defense-950/60">
-                <th className="py-2 px-3">TIMESTAMP</th>
-                <th className="py-2 px-3">SUBSYSTEM</th>
-                <th className="py-2 px-3">FEATURE</th>
-                <th className="py-2 px-3">SEVERITY</th>
-                <th className="py-2 px-3">PROBABLE CONDITION</th>
-                <th className="py-2 px-3">STATUS</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-defense-800">
-              {overview.recent_alerts.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-6 text-center text-slate-400">
-                    No active condition alerts. All systems operating within baseline tolerance.
-                  </td>
-                </tr>
-              ) : (
-                overview.recent_alerts.map((a) => (
-                  <tr key={a.id} className="hover:bg-defense-850/60">
-                    <td className="py-2.5 px-3 text-slate-300">
-                      {new Date(a.timestamp).toLocaleTimeString()}
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-100 font-semibold">{a.subsystem_name}</td>
-                    <td className="py-2.5 px-3 text-cyan-300">{a.feature_name}</td>
-                    <td className="py-2.5 px-3">
-                      <StatusBadge status={a.severity} size="sm" />
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-200">{a.probable_issue}</td>
-                    <td className="py-2.5 px-3">
-                      <StatusBadge status={a.status} size="sm" />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
