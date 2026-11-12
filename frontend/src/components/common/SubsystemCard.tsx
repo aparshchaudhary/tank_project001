@@ -154,23 +154,21 @@ export const getSubsystemTechnicalItems = (
         else if (dist > 300.0) distStatus = 'WARNING';
       }
 
-      const spd = features?.recoil_speed;
-      const spdStr = spd !== undefined ? spd.toFixed(2) : '1.85';
-      const spdStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
-        spd !== undefined && (spd < 1.5 || spd > 2.2) ? 'WARNING' : 'NORMAL';
-
       const time = features?.recoil_time;
-      const timeStr = time !== undefined ? time.toFixed(2) : '0.32';
+      const timeVal = time !== undefined ? time : 0.15;
+      const timeStr = timeVal.toFixed(2);
       const timeStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
-        time !== undefined && (time < 0.28 || time > 0.38) ? 'WARNING' : 'NORMAL';
+        timeVal >= 0.20 ? (timeVal > 0.25 ? 'CRITICAL' : 'WARNING') : 'NORMAL';
 
-      const oil = features?.oil_level;
-      const oilStr = oil !== undefined ? oil.toFixed(1) : '94.0';
-      let oilStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' = 'NORMAL';
-      if (oil !== undefined) {
-        if (oil < 85.0) oilStatus = 'CRITICAL';
-        else if (oil < 90.0) oilStatus = 'WARNING';
-      }
+      const spd = features?.recoil_speed;
+      // Stroke time must be < 0.20 s; speed is calculated/adjusted accordingly (v = dist / time)
+      const computedSpeed = dist !== undefined && timeVal > 0
+        ? ((dist / 1000.0) / timeVal)
+        : (spd ?? 1.85);
+      const spdVal = spd ?? computedSpeed;
+      const spdStr = spdVal.toFixed(2);
+      const spdStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        spdVal < 1.40 || spdVal > 2.30 ? 'WARNING' : 'NORMAL';
 
       return [
         {
@@ -192,34 +190,22 @@ export const getSubsystemTechnicalItems = (
           parameter: 'Recoil Motion Speed',
           value: spdStr,
           unit: 'm/s',
-          range: '1.50 – 2.20 m/s',
+          range: '1.40 – 2.30 m/s',
           status: spdStatus,
-          statusDetails: 'Recoil velocity measured through displacement rate tracking.',
-          details: 'Evaluates fluid orifice throttling and damper rod damping resistance.',
+          statusDetails: 'Dynamic recoil velocity calculated from stroke travel over stroke time (<0.20 s).',
+          details: 'Evaluates dynamic motion speed and damping orifice resistance throughout the recoil stroke.',
         },
         {
           id: '3.3',
           code: '3.3',
           title: 'Recoil Time Reading',
-          parameter: 'Cycle Duration Time',
+          parameter: 'Stroke Cycle Time',
           value: timeStr,
           unit: 's',
-          range: '0.28 – 0.38 s',
+          range: '< 0.20 s (Nominal: 0.12 – 0.18 s)',
           status: timeStatus,
-          statusDetails: 'Recoil stroke return time in seconds.',
-          details: 'Verifies pneumatic recuperator counter-pressure and return spring cycle completion.',
-        },
-        {
-          id: '3.4',
-          code: '3.4',
-          title: 'Recoil Oil Level',
-          parameter: 'Hydraulic Buffer Reservoir',
-          value: oilStr,
-          unit: '%',
-          range: '> 85.0 % (Nominal: 90 - 100%)',
-          status: oilStatus,
-          statusDetails: 'Hydraulic fluid reservoir percentage in recoil damper accumulator.',
-          details: 'Ensures adequate fluid charge to prevent aeration, cavitation, and thermal seal degradation.',
+          statusDetails: 'Stroke time must be strictly less than 0.20 s for nominal recoil cycle. Time >= 0.20 s indicates delayed stroke return.',
+          details: 'Stroke duration cycle time in seconds. Specified limit is strictly less than 0.20 seconds.',
         },
       ];
     }
@@ -286,11 +272,6 @@ export const getSubsystemTechnicalItems = (
       const k1Status: 'NORMAL' | 'WARNING' | 'CRITICAL' =
         k1 !== undefined && (k1 < 25.0 || k1 > 40.0) ? 'WARNING' : 'NORMAL';
 
-      const mp9 = features?.mp9_voltage;
-      const mp9Str = mp9 !== undefined ? mp9.toFixed(1) : '31.8';
-      const mp9Status: 'NORMAL' | 'WARNING' | 'CRITICAL' =
-        mp9 !== undefined && (mp9 < 25.0 || mp9 > 40.0) ? 'WARNING' : 'NORMAL';
-
       const motor = features?.motor_voltage;
       const motorStr = motor !== undefined ? motor.toFixed(1) : '34.0';
       const motorStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
@@ -312,18 +293,6 @@ export const getSubsystemTechnicalItems = (
         {
           id: '5.2',
           code: '5.2',
-          title: 'MP9 Voltage Check',
-          parameter: 'MP9 Distribution Rail Voltage',
-          value: mp9Str,
-          unit: 'V',
-          range: '25 – 40 V = IDEAL / NORMAL',
-          status: mp9Status,
-          statusDetails: '25-40 V = IDEAL / NORMAL. Displayed strictly in Volts (V), not Amps.',
-          details: 'Auxiliary electrical distribution rail MP9 voltage for turret rotation electronics.',
-        },
-        {
-          id: '5.3',
-          code: '5.3',
           title: 'Actuating Motor Voltage Check',
           parameter: 'Azimuth Drive Motor Voltage',
           value: motorStr,

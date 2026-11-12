@@ -47,6 +47,7 @@ export const LiveMonitoringPage: React.FC = () => {
     const timeStr = new Date().toLocaleTimeString();
 
     // Default nominal baseline values
+    let recTime = 0.15;
     let recSpeed = 1.85;
     let recDist = 275.0;
     let recOil = 94.0;
@@ -58,8 +59,13 @@ export const LiveMonitoringPage: React.FC = () => {
     latestBatch.forEach((item) => {
       const f = item.features;
       if (item.subsystem_code === 'RECOIL') {
-        if (f.recoil_speed !== undefined) recSpeed = f.recoil_speed;
+        if (f.recoil_time !== undefined) recTime = f.recoil_time;
         if (f.recoil_distance !== undefined) recDist = f.recoil_distance;
+        if (f.recoil_speed !== undefined) {
+          recSpeed = f.recoil_speed;
+        } else if (recDist && recTime > 0) {
+          recSpeed = (recDist / 1000.0) / recTime;
+        }
         if (f.oil_level !== undefined) recOil = f.oil_level;
       } else if (item.subsystem_code === 'LRF') {
         if (f.detector_voltage !== undefined) lrfVolt = f.detector_voltage;
@@ -157,33 +163,39 @@ export const LiveMonitoringPage: React.FC = () => {
           </div>
           <div className="mt-3">
             <div className="text-2xl font-bold text-slate-100">
-              {recoilData?.features.recoil_speed?.toFixed(2) || '1.85'}{' '}
+              {(() => {
+                const spd = recoilData?.features.recoil_speed;
+                const time = recoilData?.features.recoil_time ?? 0.15;
+                if (spd !== undefined) return spd.toFixed(2);
+                if (recoilDist && time > 0) return ((recoilDist / 1000.0) / time).toFixed(2);
+                return '1.85';
+              })()}{' '}
               <span className="text-xs font-normal text-slate-400">m/s</span>
             </div>
             <div className="text-[11px] text-slate-400 mt-1 flex justify-between">
               <span>Baseline: 1.85 m/s</span>
-              <span className="text-emerald-400">Stroke Time: {recoilData?.features.recoil_time?.toFixed(2) || '0.32'} s</span>
+              <span className={(recoilData?.features.recoil_time ?? 0.15) < 0.20 ? 'text-emerald-400' : 'text-amber-400 font-bold'}>
+                Stroke Time: {(recoilData?.features.recoil_time ?? 0.15).toFixed(2)} s (&lt; 0.20 s)
+              </span>
             </div>
           </div>
         </div>
 
-        {/* 2. Recoil Hydraulic Fluid */}
+        {/* 2. Recoil Distance Reading (no mention of reservoir) */}
         <div className="bg-defense-900 border border-defense-700/80 rounded-lg p-4">
           <div className="flex items-center justify-between text-xs text-slate-400 pb-2 border-b border-defense-800">
             <span className="flex items-center gap-1.5 text-cyan-400 font-semibold">
-              <Gauge className="w-3.5 h-3.5" /> 2. RECOIL HYDRAULIC FLUID
+              <Gauge className="w-3.5 h-3.5" /> 2. RECOIL DISTANCE READING
             </span>
             <span className="text-[10px] bg-defense-800 px-1.5 py-0.5 rounded">RECOIL</span>
           </div>
           <div className="mt-3">
             <div className="text-2xl font-bold text-slate-100">
-              {recoilData?.features.oil_level?.toFixed(1) || '94.0'}{' '}
-              <span className="text-xs font-normal text-slate-400">% Reservoir</span>
+              {recoilDist.toFixed(1)}{' '}
+              <span className="text-xs font-normal text-slate-400">mm</span>
             </div>
             <div className="text-[11px] text-slate-400 mt-1 flex justify-between">
-              <span>
-                Distance: <strong className="text-cyan-300">{recoilDist.toFixed(1)} mm</strong>
-              </span>
+              <span>Specified: 250 – 300 mm</span>
               <span
                 className={
                   recoilDistStatus === 'CRITICAL'
@@ -193,7 +205,7 @@ export const LiveMonitoringPage: React.FC = () => {
                     : 'text-emerald-400'
                 }
               >
-                {recoilDistStatus === 'NORMAL' ? 'Normal (250-300 mm)' : `${recoilDistStatus}`}
+                {recoilDistStatus === 'NORMAL' ? 'NORMAL' : `${recoilDistStatus}`}
               </span>
             </div>
           </div>
@@ -285,7 +297,7 @@ export const LiveMonitoringPage: React.FC = () => {
             <div className="text-[11px] text-slate-400 mt-1 flex justify-between">
               <span>Range: 25 – 40 V (IDEAL)</span>
               <span className="text-emerald-400">
-                MP9: {azimuthData?.features.mp9_voltage?.toFixed(2) || '31.80'} V
+                K1 Contactor: {azimuthData?.features.k1_voltage?.toFixed(2) || '32.50'} V
               </span>
             </div>
           </div>
@@ -301,7 +313,7 @@ export const LiveMonitoringPage: React.FC = () => {
               <Activity className="w-4 h-4 text-cyan-400" />
               <span className="font-bold text-slate-200">1. RECOIL SPEED SENSOR STREAM (m/s)</span>
             </div>
-            <span className="text-slate-400 text-[11px]">Nominal: 1.85 m/s</span>
+            <span className="text-slate-400 text-[11px]">Stroke Time &lt; 0.20 s | Baseline: 1.85 m/s</span>
           </div>
           <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -317,14 +329,14 @@ export const LiveMonitoringPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Chart 2: Recoil Hydraulic Fluid & Distance */}
+        {/* Chart 2: Recoil Distance Stream */}
         <div className="bg-defense-900 border border-defense-700/80 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3 font-mono text-xs">
             <div className="flex items-center gap-2">
               <Gauge className="w-4 h-4 text-emerald-400" />
-              <span className="font-bold text-slate-200">2. RECOIL DISTANCE & FLUID STREAM</span>
+              <span className="font-bold text-slate-200">2. RECOIL DISTANCE STREAM (mm)</span>
             </div>
-            <span className="text-slate-400 text-[11px]">Warning: 300 mm | Critical: 350 mm</span>
+            <span className="text-slate-400 text-[11px]">Normal: 250-300 mm | Warning: 300 mm | Critical: 350 mm</span>
           </div>
           <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">

@@ -33,7 +33,7 @@ NOMINAL_BASELINES: Dict[str, Dict[str, Any]] = {
     "RECOIL": {
         "recoil_distance": {"mean": 275.0, "std": 6.0, "unit": "mm"},
         "recoil_speed": {"mean": 1.85, "std": 0.08, "unit": "m/s"},
-        "recoil_time": {"mean": 0.32, "std": 0.02, "unit": "s"},
+        "recoil_time": {"mean": 0.15, "std": 0.01, "unit": "s"},
         "oil_level": {"mean": 94.0, "std": 1.5, "unit": "%"},
     },
     "ELEVATION": {

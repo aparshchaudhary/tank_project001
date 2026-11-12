@@ -70,6 +70,8 @@ class SyntheticDataGenerator:
                     val += fault_severity * 85.0 # Extends distance into 300-350 (warning) and >350 (critical)
                 elif feature_name == "recoil_speed":
                     val += fault_severity * 0.8
+                elif feature_name == "recoil_time":
+                    val += fault_severity * 0.12 # Extends stroke time > 0.20s (delayed stroke)
             elif subsystem_code == "AZIMUTH" and "voltage" in feature_name:
                 val -= fault_severity * 9.0
 

@@ -110,7 +110,7 @@ def seed_database():
                     "code": "RECOIL",
                     "name": "Recoil Mechanism Subsystem",
                     "category": "Hydraulic / Mechanical",
-                    "description": "Dynamic recoil buffer cylinder, stroke distance (mm), buffer speed, cycle duration, and oil reservoir level.",
+                    "description": "Dynamic recoil buffer cylinder, stroke distance (mm), buffer speed, and stroke duration.",
                     "hours": 195.0,
                     "cycles": 5800,
                     "initial_hi": 88.5
@@ -128,7 +128,7 @@ def seed_database():
                     "code": "AZIMUTH",
                     "name": "Azimuth / Turret Drive Subsystem",
                     "category": "Electrical / Mechanical",
-                    "description": "Turret rotational slew assembly, K1 contactor voltage (25-40V), MP9 voltage (25-40V), and motor voltage (25-40V).",
+                    "description": "Turret rotational slew assembly, K1 contactor voltage (25-40V), and motor voltage (25-40V).",
                     "hours": 340.0,
                     "cycles": 12400,
                     "initial_hi": 93.0

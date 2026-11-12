@@ -44,6 +44,7 @@ class AnomalyDetector:
         # Recoil subsystem rules
         if subsystem_code == "RECOIL" or feature_name.startswith("recoil"):
             r_dist = all_features.get("recoil_distance", 0.0)
+            r_time = all_features.get("recoil_time", 0.15)
             r_oil = all_features.get("oil_level", 100.0)
             if r_dist > 350.0:
                 return "Recoil Buffer Critical Extension (>350 mm)"
@@ -51,8 +52,10 @@ class AnomalyDetector:
                 return "Recoil Travel Warning (300-350 mm)"
             elif 0.0 < r_dist < 250.0:
                 return "Recoil Distance Below Minimum Range (<250 mm)"
+            elif r_time >= 0.20:
+                return "Recoil Stroke Time Limit Exceeded (>=0.20 s)"
             elif r_oil < 80.0:
-                return "Recoil Damper Reservoir Low Fluid Level"
+                return "Recoil Damper Low Fluid Level"
 
         # LRF subsystem rules
         if subsystem_code == "LRF" or "detector_voltage" in feature_name:
