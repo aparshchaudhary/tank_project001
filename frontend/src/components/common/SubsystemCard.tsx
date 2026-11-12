@@ -142,6 +142,24 @@ export const getSubsystemTechnicalItems = (
             threshold: 'TBD (Configurable)',
           })),
         },
+        {
+          id: '2.3',
+          code: '2.3',
+          title: 'ALG Directional Switches Check (K1–K4)',
+          parameter: 'K1 Forward, K2 Reverse, K3 Forward, K4 Reverse',
+          value: `${[features?.k1_forward, features?.k2_reverse, features?.k3_forward, features?.k4_reverse].filter(v => v === undefined || v >= 0.5).length}/4 ACTIVE`,
+          unit: 'BINARY (0/1)',
+          range: '1 = ON / Active, 0 = OFF / Inactive',
+          status: [features?.k1_forward, features?.k2_reverse, features?.k3_forward, features?.k4_reverse].some(v => v !== undefined && v < 0.5) ? 'WARNING' : 'NORMAL',
+          statusDetails: 'K1–K4 binary switch status (1 = ON, 0 = OFF). All 4 switches active = 1.',
+          details: 'Direct real-time status verification of the 4 directional circuit switches (K1 Forward, K2 Reverse, K3 Forward, K4 Reverse).',
+          subSwitches: [
+            { code: 'K1', name: 'K1 – Forward', status: (features?.k1_forward ?? 1) >= 0.5 ? 'ON (1)' : 'OFF (0)', threshold: 'Binary 0/1' },
+            { code: 'K2', name: 'K2 – Reverse', status: (features?.k2_reverse ?? 1) >= 0.5 ? 'ON (1)' : 'OFF (0)', threshold: 'Binary 0/1' },
+            { code: 'K3', name: 'K3 – Forward', status: (features?.k3_forward ?? 1) >= 0.5 ? 'ON (1)' : 'OFF (0)', threshold: 'Binary 0/1' },
+            { code: 'K4', name: 'K4 – Reverse', status: (features?.k4_reverse ?? 1) >= 0.5 ? 'ON (1)' : 'OFF (0)', threshold: 'Binary 0/1' },
+          ],
+        },
       ];
     }
 
@@ -226,10 +244,44 @@ export const getSubsystemTechnicalItems = (
       const pressStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
         press !== undefined && (press < 10.0 || press > 200.0) ? 'WARNING' : 'NORMAL';
 
+      const elevUp = features?.elevation_up_voltage ?? features?.k1_voltage;
+      const elevUpStr = elevUp !== undefined ? elevUp.toFixed(2) : '32.50';
+      const elevUpStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        elevUp !== undefined && (elevUp < 25.0 || elevUp > 40.0) ? 'WARNING' : 'NORMAL';
+
+      const elevDown = features?.elevation_down_voltage ?? features?.psm_voltage;
+      const elevDownStr = elevDown !== undefined ? elevDown.toFixed(2) : '32.50';
+      const elevDownStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        elevDown !== undefined && (elevDown < 25.0 || elevDown > 40.0) ? 'WARNING' : 'NORMAL';
+
       return [
         {
           id: '4.1',
           code: '4.1',
+          title: 'Elevation UP Voltage Signal',
+          parameter: 'Digital Elevation UP Signal',
+          value: elevUpStr,
+          unit: 'V',
+          range: '25 – 40 V = IDEAL / NORMAL',
+          status: elevUpStatus,
+          statusDetails: '25-40 V = IDEAL / NORMAL. Independent digital UP voltage signal.',
+          details: 'Digital voltage reading monitoring the elevation UP actuating signal circuit.',
+        },
+        {
+          id: '4.2',
+          code: '4.2',
+          title: 'Elevation DOWN Voltage Signal',
+          parameter: 'Digital Elevation DOWN Signal',
+          value: elevDownStr,
+          unit: 'V',
+          range: '25 – 40 V = IDEAL / NORMAL',
+          status: elevDownStatus,
+          statusDetails: '25-40 V = IDEAL / NORMAL. Independent digital DOWN voltage signal.',
+          details: 'Digital voltage reading monitoring the elevation DOWN actuating signal circuit.',
+        },
+        {
+          id: '4.3',
+          code: '4.3',
           title: 'K1 Voltage Check',
           parameter: 'K1 Elevation Contactor Voltage',
           value: k1Str,
@@ -240,8 +292,8 @@ export const getSubsystemTechnicalItems = (
           details: 'Primary electrical relay K1 coil and bus supply voltage for elevation drive control.',
         },
         {
-          id: '4.2',
-          code: '4.2',
+          id: '4.4',
+          code: '4.4',
           title: 'Power Supply Mount Voltage Check',
           parameter: 'PSM Regulated Bus Voltage',
           value: psmStr,
@@ -252,8 +304,8 @@ export const getSubsystemTechnicalItems = (
           details: 'Electrical voltage delivery from the elevation power supply mount assembly.',
         },
         {
-          id: '4.3',
-          code: '4.3',
+          id: '4.5',
+          code: '4.5',
           title: 'Actuating Cylinder Hydraulic Fluid Pressure',
           parameter: 'Elevation Cylinder Pressure',
           value: pressStr,
@@ -277,10 +329,44 @@ export const getSubsystemTechnicalItems = (
       const motorStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
         motor !== undefined && (motor < 25.0 || motor > 40.0) ? 'WARNING' : 'NORMAL';
 
+      const azimLeft = features?.azimuth_left_signal ?? features?.motor_voltage;
+      const azimLeftStr = azimLeft !== undefined ? azimLeft.toFixed(2) : '33.50';
+      const azimLeftStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        azimLeft !== undefined && (azimLeft < 25.0 || azimLeft > 40.0) ? 'WARNING' : 'NORMAL';
+
+      const azimRight = features?.azimuth_right_signal ?? features?.k1_voltage;
+      const azimRightStr = azimRight !== undefined ? azimRight.toFixed(2) : '33.50';
+      const azimRightStatus: 'NORMAL' | 'WARNING' | 'CRITICAL' =
+        azimRight !== undefined && (azimRight < 25.0 || azimRight > 40.0) ? 'WARNING' : 'NORMAL';
+
       return [
         {
           id: '5.1',
           code: '5.1',
+          title: 'Azimuth LEFT Directional Signal',
+          parameter: 'Azimuth Slew LEFT Signal',
+          value: azimLeftStr,
+          unit: 'V',
+          range: '25 – 40 V = IDEAL / NORMAL',
+          status: azimLeftStatus,
+          statusDetails: '25-40 V = IDEAL / NORMAL. Independent LEFT directional signal.',
+          details: 'Signal voltage reading monitoring azimuth left slew actuation.',
+        },
+        {
+          id: '5.2',
+          code: '5.2',
+          title: 'Azimuth RIGHT Directional Signal',
+          parameter: 'Azimuth Slew RIGHT Signal',
+          value: azimRightStr,
+          unit: 'V',
+          range: '25 – 40 V = IDEAL / NORMAL',
+          status: azimRightStatus,
+          statusDetails: '25-40 V = IDEAL / NORMAL. Independent RIGHT directional signal.',
+          details: 'Signal voltage reading monitoring azimuth right slew actuation.',
+        },
+        {
+          id: '5.3',
+          code: '5.3',
           title: 'K1 Voltage Check',
           parameter: 'K1 Azimuth Contactor Voltage',
           value: k1Str,
@@ -291,8 +377,8 @@ export const getSubsystemTechnicalItems = (
           details: 'Electrical voltage reading across the K1 azimuth slew drive contactor.',
         },
         {
-          id: '5.2',
-          code: '5.2',
+          id: '5.4',
+          code: '5.4',
           title: 'Actuating Motor Voltage Check',
           parameter: 'Azimuth Drive Motor Voltage',
           value: motorStr,

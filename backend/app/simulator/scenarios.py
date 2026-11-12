@@ -29,6 +29,10 @@ NOMINAL_BASELINES: Dict[str, Dict[str, Any]] = {
         "cbdm_microswitch": {"mean": 1.0, "std": 0.0, "unit": "STATE"},
         "cbdd_microswitch": {"mean": 1.0, "std": 0.0, "unit": "STATE"},
         "gun_motor_lock": {"mean": 1.0, "std": 0.0, "unit": "STATE"},
+        "k1_forward": {"mean": 1.0, "std": 0.0, "unit": "BINARY (0/1)"},
+        "k2_reverse": {"mean": 1.0, "std": 0.0, "unit": "BINARY (0/1)"},
+        "k3_forward": {"mean": 1.0, "std": 0.0, "unit": "BINARY (0/1)"},
+        "k4_reverse": {"mean": 1.0, "std": 0.0, "unit": "BINARY (0/1)"},
     },
     "RECOIL": {
         "recoil_distance": {"mean": 275.0, "std": 6.0, "unit": "mm"},
@@ -40,11 +44,15 @@ NOMINAL_BASELINES: Dict[str, Dict[str, Any]] = {
         "k1_voltage": {"mean": 32.5, "std": 1.2, "unit": "V"},
         "psm_voltage": {"mean": 33.0, "std": 1.0, "unit": "V"},
         "hydraulic_pressure": {"mean": 125.0, "std": 8.0, "unit": "MPa"},
+        "elevation_up_voltage": {"mean": 32.5, "std": 1.0, "unit": "V"},
+        "elevation_down_voltage": {"mean": 32.5, "std": 1.0, "unit": "V"},
     },
     "AZIMUTH": {
         "k1_voltage": {"mean": 32.5, "std": 1.2, "unit": "V"},
         "mp9_voltage": {"mean": 31.8, "std": 1.1, "unit": "V"},
         "motor_voltage": {"mean": 34.0, "std": 1.4, "unit": "V"},
+        "azimuth_left_signal": {"mean": 33.5, "std": 1.0, "unit": "V"},
+        "azimuth_right_signal": {"mean": 33.5, "std": 1.0, "unit": "V"},
     },
 }
 

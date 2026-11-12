@@ -15,6 +15,29 @@ from app.simulator.runner import simulator_runner
 
 router = APIRouter()
 
+def normalize_feature_name(name: str) -> str:
+    cleaned = str(name).strip().lower()
+    # Normalize ALG switches (K1-K4 Forward/Reverse)
+    if cleaned in ["k1", "k1_fwd", "k1_forward", "switch_k1"]:
+        return "k1_forward"
+    if cleaned in ["k2", "k2_rev", "k2_reverse", "switch_k2"]:
+        return "k2_reverse"
+    if cleaned in ["k3", "k3_fwd", "k3_forward", "switch_k3"]:
+        return "k3_forward"
+    if cleaned in ["k4", "k4_rev", "k4_reverse", "switch_k4"]:
+        return "k4_reverse"
+    # Normalize Elevation signals (UP / DOWN)
+    if cleaned in ["up_voltage", "elevation_up", "elevation_up_voltage", "up", "elev_up"]:
+        return "elevation_up_voltage"
+    if cleaned in ["down_voltage", "elevation_down", "elevation_down_voltage", "down", "elev_down"]:
+        return "elevation_down_voltage"
+    # Normalize Azimuth signals (LEFT / RIGHT)
+    if cleaned in ["left_signal", "azimuth_left", "azimuth_left_signal", "azimuth_left_voltage", "left", "azim_left"]:
+        return "azimuth_left_signal"
+    if cleaned in ["right_signal", "azimuth_right", "azimuth_right_signal", "azimuth_right_voltage", "right", "azim_right"]:
+        return "azimuth_right_signal"
+    return cleaned
+
 @router.post("/readings", response_model=RawReadingResponse, status_code=status.HTTP_201_CREATED)
 def ingest_single_reading(
     payload: RawReadingCreate,
@@ -73,7 +96,8 @@ def ingest_single_reading(
     db.refresh(reading)
 
     sub_key = subsystem.code
-    feat_name = payload.sensor_type or payload.sensor_channel_id.replace(f"CH_{sub_key}_", "").lower()
+    raw_feat = payload.sensor_type or payload.sensor_channel_id.replace(f"CH_{sub_key}_", "").lower()
+    feat_name = normalize_feature_name(raw_feat)
     telemetry_cache.update_features(sub_key, {feat_name: payload.value})
 
     try:
@@ -161,7 +185,8 @@ def ingest_batch_readings(
         subsystems_updated: dict = {}
         for r in payload.readings:
             sub_key = str(r.subsystem_id).upper()
-            feat_name = r.sensor_type or r.sensor_channel_id.replace(f"CH_{sub_key}_", "").lower()
+            raw_feat = r.sensor_type or r.sensor_channel_id.replace(f"CH_{sub_key}_", "").lower()
+            feat_name = normalize_feature_name(raw_feat)
             if sub_key not in subsystems_updated:
                 subsystems_updated[sub_key] = {}
             subsystems_updated[sub_key][feat_name] = r.value

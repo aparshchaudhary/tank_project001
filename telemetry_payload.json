@@ -27,6 +27,54 @@
       "sensor_type": "circuit_serviceability"
     },
     {
+      "reading_id": "READ_ALG_K1_001",
+      "sensor_channel_id": "CH_ALG_K1_FORWARD",
+      "subsystem_id": "ALG",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 1.0,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "READY_STATIONARY",
+      "schema_version": "1.0",
+      "unit": "BINARY (0/1)",
+      "sensor_type": "k1_forward"
+    },
+    {
+      "reading_id": "READ_ALG_K2_001",
+      "sensor_channel_id": "CH_ALG_K2_REVERSE",
+      "subsystem_id": "ALG",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 1.0,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "READY_STATIONARY",
+      "schema_version": "1.0",
+      "unit": "BINARY (0/1)",
+      "sensor_type": "k2_reverse"
+    },
+    {
+      "reading_id": "READ_ALG_K3_001",
+      "sensor_channel_id": "CH_ALG_K3_FORWARD",
+      "subsystem_id": "ALG",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 1.0,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "READY_STATIONARY",
+      "schema_version": "1.0",
+      "unit": "BINARY (0/1)",
+      "sensor_type": "k3_forward"
+    },
+    {
+      "reading_id": "READ_ALG_K4_001",
+      "sensor_channel_id": "CH_ALG_K4_REVERSE",
+      "subsystem_id": "ALG",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 1.0,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "READY_STATIONARY",
+      "schema_version": "1.0",
+      "unit": "BINARY (0/1)",
+      "sensor_type": "k4_reverse"
+    },
+    {
       "reading_id": "READ_REC_DIST_001",
       "sensor_channel_id": "CH_RECOIL_RECOIL_DISTANCE",
       "subsystem_id": "RECOIL",
@@ -87,6 +135,30 @@
       "sensor_type": "k1_voltage"
     },
     {
+      "reading_id": "READ_ELEV_UP_001",
+      "sensor_channel_id": "CH_ELEVATION_UP_VOLTAGE",
+      "subsystem_id": "ELEVATION",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 32.5,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "ELEVATION_SLEW",
+      "schema_version": "1.0",
+      "unit": "V",
+      "sensor_type": "elevation_up_voltage"
+    },
+    {
+      "reading_id": "READ_ELEV_DOWN_001",
+      "sensor_channel_id": "CH_ELEVATION_DOWN_VOLTAGE",
+      "subsystem_id": "ELEVATION",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 32.5,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "ELEVATION_SLEW",
+      "schema_version": "1.0",
+      "unit": "V",
+      "sensor_type": "elevation_down_voltage"
+    },
+    {
       "reading_id": "READ_ELEV_PSM_001",
       "sensor_channel_id": "CH_ELEVATION_PSM_VOLTAGE",
       "subsystem_id": "ELEVATION",
@@ -145,6 +217,30 @@
       "schema_version": "1.0",
       "unit": "V",
       "sensor_type": "motor_voltage"
+    },
+    {
+      "reading_id": "READ_AZIM_LEFT_001",
+      "sensor_channel_id": "CH_AZIMUTH_LEFT_SIGNAL",
+      "subsystem_id": "AZIMUTH",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 33.5,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "AZIMUTH_SLEW",
+      "schema_version": "1.0",
+      "unit": "V",
+      "sensor_type": "azimuth_left_signal"
+    },
+    {
+      "reading_id": "READ_AZIM_RIGHT_001",
+      "sensor_channel_id": "CH_AZIMUTH_RIGHT_SIGNAL",
+      "subsystem_id": "AZIMUTH",
+      "timestamp": "2026-10-16T11:30:00Z",
+      "value": 33.5,
+      "session_id": "SESSION_LIVE_STREAM",
+      "operating_mode": "AZIMUTH_SLEW",
+      "schema_version": "1.0",
+      "unit": "V",
+      "sensor_type": "azimuth_right_signal"
     }
   ]
 }

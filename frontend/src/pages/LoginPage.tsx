@@ -28,8 +28,15 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-defense-950 flex flex-col justify-center items-center p-4 font-mono">
-      <div className="max-w-md w-full bg-defense-900 border border-defense-700/80 rounded-lg p-8 shadow-2xl space-y-6">
+    <div
+      className="min-h-screen relative flex flex-col justify-center items-center p-4 font-mono bg-defense-950 bg-cover bg-center bg-no-repeat overflow-hidden"
+      style={{ backgroundImage: `url('/tank_blueprint.jpg')` }}
+    >
+      {/* High-tech tactical dark overlay with subtle grid and vignette */}
+      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-slate-950/80" />
+
+      <div className="relative z-10 max-w-md w-full bg-defense-900/90 backdrop-blur-md border border-cyan-500/30 rounded-lg p-8 shadow-2xl shadow-cyan-950/60 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="w-12 h-12 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 mx-auto flex items-center justify-center">
