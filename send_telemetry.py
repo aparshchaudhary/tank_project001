@@ -59,7 +59,7 @@ def send_batch(server_url: str, payload: dict) -> bool:
 
     t0 = time.perf_counter()
     try:
-        with urllib.request.urlopen(req, timeout=10.0) as resp:
+        with urllib.request.urlopen(req, timeout=60.0) as resp:
             elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
             resp_data = json.loads(resp.read().decode("utf-8"))
             print(f"[{datetime.now().strftime('%H:%M:%S')}] HTTP {resp.status} OK ({elapsed_ms} ms)")
