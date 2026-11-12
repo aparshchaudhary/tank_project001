@@ -56,7 +56,7 @@ def get_system_overview(db: Session = Depends(get_db)):
             status_band=band,
             active_alert_count=len(alerts_for_sub),
             trend_direction="DEGRADING" if s.current_health_index < 75.0 else "STABLE",
-            latest_features=telemetry_cache.get_features(s.code)
+            latest_features=telemetry_cache.get_features(s.code) if telemetry_cache.has_live_data() else {}
         ))
 
     overall_hi = 100.0
@@ -125,8 +125,10 @@ def get_system_overview(db: Session = Depends(get_db)):
         active_criticals=len(criticals),
         sensors_active=sensors_count,
         ingestion_rate_hz=10.0,
-        data_points_today=len(recent_records) * 6,
-        last_telemetry_timestamp=datetime.now(timezone.utc),
+        data_points_today=telemetry_cache.get_readings_count(),
+        has_live_data=telemetry_cache.has_live_data(),
+        readings_count=telemetry_cache.get_readings_count(),
+        last_telemetry_timestamp=datetime.now(timezone.utc) if telemetry_cache.has_live_data() else None,
         subsystems=subsystems_responses,
         recent_alerts=alert_resps,
         health_index_trend=health_trend

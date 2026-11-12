@@ -128,20 +128,24 @@ async def websocket_telemetry_endpoint(websocket: WebSocket):
     active_websockets.add(websocket)
     try:
         initial_batch = []
-        for code, features in telemetry_cache.get_all().items():
-            initial_batch.append({
-                "subsystem_id": code,
-                "subsystem_code": code,
-                "subsystem_name": code,
-                "health_index": 100.0,
-                "status_band": "HEALTHY",
-                "features": features,
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            })
+        has_data = telemetry_cache.has_live_data()
+        if has_data:
+            for code, features in telemetry_cache.get_all().items():
+                initial_batch.append({
+                    "subsystem_id": code,
+                    "subsystem_code": code,
+                    "subsystem_name": code,
+                    "health_index": 100.0,
+                    "status_band": "HEALTHY",
+                    "features": features,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                })
 
         await websocket.send_text(json.dumps({
             "type": "HANDSHAKE",
             "message": "Connected to TURRET CBPM Real-Time Telemetry Stream",
+            "has_live_data": has_data,
+            "readings_count": telemetry_cache.get_readings_count(),
             "batch": initial_batch
         }))
         while True:

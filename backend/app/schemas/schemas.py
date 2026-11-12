@@ -329,6 +329,8 @@ class SystemOverviewResponse(BaseModel):
     sensors_active: int
     ingestion_rate_hz: float
     data_points_today: int
+    has_live_data: bool = False
+    readings_count: int = 0
     last_telemetry_timestamp: Optional[datetime] = None
     subsystems: List[SubsystemResponse]
     recent_alerts: List[AlertResponse]

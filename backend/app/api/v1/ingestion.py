@@ -79,6 +79,9 @@ def ingest_single_reading(
     try:
         simulator_runner.broadcast_telemetry({
             "type": "TELEMETRY_UPDATE",
+            "has_live_data": True,
+            "readings_count": telemetry_cache.get_readings_count(),
+            "last_received_at": telemetry_cache.get_last_received_at(),
             "batch": [{
                 "subsystem_id": subsystem.id,
                 "subsystem_code": subsystem.code,
@@ -227,6 +230,9 @@ def ingest_batch_readings(
         if telemetry_batch:
             simulator_runner.broadcast_telemetry({
                 "type": "TELEMETRY_UPDATE",
+                "has_live_data": True,
+                "readings_count": telemetry_cache.get_readings_count(),
+                "last_received_at": telemetry_cache.get_last_received_at(),
                 "batch": telemetry_batch
             })
     except Exception as ex:

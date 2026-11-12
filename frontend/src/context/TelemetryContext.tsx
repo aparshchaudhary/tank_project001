@@ -15,6 +15,9 @@ export interface TelemetryItem {
 
 interface TelemetryContextType {
   isConnected: boolean;
+  hasLiveData: boolean;
+  readingsCount: number;
+  lastReceivedAt: string | null;
   latestBatch: TelemetryItem[];
   simulatorStatus: SimulatorStatus | null;
   refreshSimulatorStatus: () => Promise<void>;
@@ -25,6 +28,9 @@ const TelemetryContext = createContext<TelemetryContextType | undefined>(undefin
 
 export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [hasLiveData, setHasLiveData] = useState<boolean>(false);
+  const [readingsCount, setReadingsCount] = useState<number>(0);
+  const [lastReceivedAt, setLastReceivedAt] = useState<string | null>(null);
   const [latestBatch, setLatestBatch] = useState<TelemetryItem[]>([]);
   const [simulatorStatus, setSimulatorStatus] = useState<SimulatorStatus | null>(null);
 
@@ -41,23 +47,33 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const overview = await api.getOverview();
       if (overview?.subsystems && overview.subsystems.length > 0) {
-        setLatestBatch((prev) => {
-          const map = new Map<string, TelemetryItem>();
-          prev.forEach((item) => map.set(item.subsystem_code, item));
-          overview.subsystems.forEach((s) => {
-            const existing = map.get(s.code);
-            map.set(s.code, {
-              subsystem_id: s.id,
-              subsystem_code: s.code,
-              subsystem_name: s.name,
-              health_index: s.current_health_index,
-              status_band: s.status_band || 'HEALTHY',
-              features: { ...(existing?.features || {}), ...(s.latest_features || {}) },
-              timestamp: new Date().toISOString(),
+        const serverHasLive = Boolean((overview as any).has_live_data);
+        const anySubHasFeatures = overview.subsystems.some(
+          (s) => s.latest_features && Object.keys(s.latest_features).length > 0
+        );
+        if (serverHasLive || anySubHasFeatures) {
+          setHasLiveData(true);
+          if ((overview as any).readings_count) {
+            setReadingsCount((overview as any).readings_count);
+          }
+          setLatestBatch((prev) => {
+            const map = new Map<string, TelemetryItem>();
+            prev.forEach((item) => map.set(item.subsystem_code, item));
+            overview.subsystems.forEach((s) => {
+              const existing = map.get(s.code);
+              map.set(s.code, {
+                subsystem_id: s.id,
+                subsystem_code: s.code,
+                subsystem_name: s.name,
+                health_index: s.current_health_index,
+                status_band: s.status_band || 'HEALTHY',
+                features: { ...(existing?.features || {}), ...(s.latest_features || {}) },
+                timestamp: new Date().toISOString(),
+              });
             });
+            return Array.from(map.values());
           });
-          return Array.from(map.values());
-        });
+        }
       }
     } catch (e) {
       // Ignore polling errors
@@ -75,24 +91,21 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsConnected(false);
       } else if (data.type === 'HANDSHAKE') {
         setIsConnected(true);
-        if (data.batch && Array.isArray(data.batch)) {
-          setLatestBatch((prev) => {
-            const map = new Map<string, TelemetryItem>();
-            prev.forEach((item) => map.set(item.subsystem_code, item));
-            data.batch.forEach((newItem: TelemetryItem) => {
-              const existing = map.get(newItem.subsystem_code);
-              map.set(newItem.subsystem_code, {
-                ...newItem,
-                features: { ...(existing?.features || {}), ...(newItem.features || {}) },
-              });
-            });
-            return Array.from(map.values());
-          });
+        if (data.has_live_data && data.batch && data.batch.length > 0) {
+          setHasLiveData(true);
+          if (data.readings_count) setReadingsCount(data.readings_count);
+          setLatestBatch(data.batch);
+        } else {
+          setHasLiveData(false);
+          setLatestBatch([]);
         }
         if (data.simulator_status) {
           setSimulatorStatus(data.simulator_status);
         }
       } else if (data.type === 'TELEMETRY_UPDATE') {
+        setHasLiveData(true);
+        if (data.readings_count) setReadingsCount(data.readings_count);
+        if (data.last_received_at) setLastReceivedAt(data.last_received_at);
         if (data.batch && Array.isArray(data.batch)) {
           setLatestBatch((prev) => {
             const map = new Map<string, TelemetryItem>();
@@ -129,6 +142,9 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     <TelemetryContext.Provider
       value={{
         isConnected,
+        hasLiveData,
+        readingsCount,
+        lastReceivedAt,
         latestBatch,
         simulatorStatus,
         refreshSimulatorStatus,

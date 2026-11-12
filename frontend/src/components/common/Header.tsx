@@ -10,7 +10,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenAlerts, activeAlertCount = 0 }) => {
   const { user, role, logout } = useAuth();
-  const { isConnected, simulatorStatus } = useTelemetry();
+  const { isConnected, hasLiveData } = useTelemetry();
 
   return (
     <header className="h-16 bg-defense-900 border-b border-defense-700/60 px-6 flex items-center justify-between sticky top-0 z-30 shadow-md">
@@ -33,11 +33,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAlerts, activeAlertCount =
           </div>
         </div>
 
-        {/* LIVE TELEMETRY INGESTION NOTICE */}
-        <div className="ml-4 px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2">
-          <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-          <span className="text-[11px] font-mono font-bold tracking-wide text-emerald-400 uppercase">
-            LIVE TELEMETRY INGESTION
+        {/* TELEMETRY INGESTION NOTICE */}
+        <div className={`ml-4 px-2.5 py-1 rounded flex items-center gap-2 ${
+          hasLiveData
+            ? 'bg-emerald-500/10 border border-emerald-500/30'
+            : 'bg-amber-500/10 border border-amber-500/30'
+        }`}>
+          <Radio className={`w-3.5 h-3.5 ${hasLiveData ? 'text-emerald-400 animate-pulse' : 'text-amber-400'}`} />
+          <span className={`text-[11px] font-mono font-bold tracking-wide uppercase ${
+            hasLiveData ? 'text-emerald-400' : 'text-amber-400'
+          }`}>
+            {hasLiveData ? 'LIVE TELEMETRY INGESTION' : 'TELEMETRY STANDBY • AWAITING INGESTION'}
           </span>
         </div>
       </div>
@@ -46,10 +52,22 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAlerts, activeAlertCount =
       <div className="flex items-center gap-4">
         {/* DAQ / Stream Status */}
         <div className="flex items-center gap-2 px-3 py-1 rounded bg-defense-950 border border-defense-700/60 font-mono text-xs">
-          <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400 shadow-[0_0_8px_#10b981]' : 'bg-red-500 animate-ping'}`} />
+          <span className={`w-2 h-2 rounded-full ${
+            !isConnected
+              ? 'bg-red-500 animate-ping'
+              : hasLiveData
+              ? 'bg-emerald-400 shadow-[0_0_8px_#10b981] animate-pulse'
+              : 'bg-amber-400 shadow-[0_0_8px_#f59e0b]'
+          }`} />
           <span className="text-slate-400 text-[11px]">STREAM:</span>
-          <span className={isConnected ? 'text-emerald-400 font-semibold' : 'text-red-400 font-semibold'}>
-            {isConnected ? 'LIVE' : 'DISCONNECTED'}
+          <span className={
+            !isConnected
+              ? 'text-red-400 font-semibold'
+              : hasLiveData
+              ? 'text-emerald-400 font-semibold'
+              : 'text-amber-400 font-semibold'
+          }>
+            {!isConnected ? 'DISCONNECTED' : hasLiveData ? 'LIVE' : 'STANDBY (AWAITING DATA)'}
           </span>
         </div>
 
