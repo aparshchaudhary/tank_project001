@@ -96,10 +96,10 @@ export const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        {/* Quick Demo Credentials */}
+        {/* System Operator Credentials */}
         <div className="pt-4 border-t border-defense-800 space-y-2">
           <div className="text-[11px] text-slate-400 text-center uppercase tracking-wide">
-            Test Bench Quick-Fill Roles:
+            Operator Quick-Fill Roles:
           </div>
           <div className="grid grid-cols-3 gap-2 text-[10px]">
             <button

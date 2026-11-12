@@ -131,22 +131,24 @@ export const LiveMonitoringPage: React.FC = () => {
             <h2 className="text-sm font-bold text-slate-100 uppercase tracking-wider">
               REAL-TIME TURRET SENSOR TELEMETRY BUS (WEBSOCKET DAQ)
             </h2>
-            <div className="text-xs text-slate-400">
-              Active Scenario: <span className="text-cyan-300 font-semibold">{simulatorStatus?.scenario || 'HEALTHY'}</span> | 
-              Severity: <span className="text-amber-300 font-semibold">{((simulatorStatus?.fault_severity || 0) * 100).toFixed(0)}%</span> | 
-              Mode: <span className="text-slate-300">{simulatorStatus?.operating_mode || 'NORMAL'}</span>
+            <div className="text-xs text-slate-400 mt-0.5">
+              Live Ingestion: <span className="text-emerald-400 font-semibold">ONLINE / STREAMING</span> | 
+              Mode: <span className="text-cyan-300 font-semibold">DIRECT SENSOR ACQUISITION</span> | 
+              Channel Sync: <span className="text-slate-300">ACTIVE</span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-4 text-xs">
           <div className="bg-defense-950 px-3 py-1.5 rounded border border-defense-800">
-            <span className="text-slate-400">Points Received: </span>
-            <span className="text-cyan-400 font-bold">{simulatorStatus?.readings_generated_count || 0}</span>
+            <span className="text-slate-400">Connection: </span>
+            <span className={isConnected ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
+              {isConnected ? "CONNECTED" : "OFFLINE"}
+            </span>
           </div>
           <div className="bg-defense-950 px-3 py-1.5 rounded border border-defense-800">
-            <span className="text-slate-400">Speed: </span>
-            <span className="text-emerald-400 font-bold">{simulatorStatus?.speed_multiplier || 1.0}x</span>
+            <span className="text-slate-400">Stream Buffer: </span>
+            <span className="text-cyan-400 font-bold">{historyBuffer.length} Points</span>
           </div>
         </div>
       </div>

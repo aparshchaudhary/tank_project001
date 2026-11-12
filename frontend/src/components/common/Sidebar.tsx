@@ -44,7 +44,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab, activ
     { id: 'analytics', label: 'Analytics', icon: TrendingDown, minRole: 'VIEWER' },
     { id: 'maintenance', label: 'Maintenance', icon: Wrench, minRole: 'VIEWER' },
     { id: 'reports', label: 'Reports', icon: FileText, minRole: 'VIEWER' },
-    { id: 'simulator', label: 'Data Simulator', icon: Radio, minRole: 'VIEWER' },
     { id: 'models', label: 'AI / Models', icon: BrainCircuit, minRole: 'VIEWER' },
     { id: 'admin', label: 'Administration', icon: ShieldCheck, minRole: 'ADMIN' },
     { id: 'audit', label: 'Audit Logs', icon: ScrollText, minRole: 'TECHNICIAN' },

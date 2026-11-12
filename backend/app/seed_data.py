@@ -95,7 +95,7 @@ def seed_database():
                     "description": "Precision laser range determination, detector voltage monitoring (9.5-12.0V), and optical path health.",
                     "hours": 280.0,
                     "cycles": 9500,
-                    "initial_hi": 96.5
+                    "initial_hi": 100.0
                 },
                 {
                     "code": "ALG",
@@ -104,7 +104,7 @@ def seed_database():
                     "description": "Autoloader sequencing, circuit serviceability checks, and 6-microswitch operational verification.",
                     "hours": 310.0,
                     "cycles": 11200,
-                    "initial_hi": 94.0
+                    "initial_hi": 100.0
                 },
                 {
                     "code": "RECOIL",
@@ -113,7 +113,7 @@ def seed_database():
                     "description": "Dynamic recoil buffer cylinder, stroke distance (mm), buffer speed, and stroke duration.",
                     "hours": 195.0,
                     "cycles": 5800,
-                    "initial_hi": 88.5
+                    "initial_hi": 100.0
                 },
                 {
                     "code": "ELEVATION",
@@ -122,7 +122,7 @@ def seed_database():
                     "description": "Gun elevation drive, K1 relay voltage (25-40V), power supply mount voltage (25-40V), and cylinder pressure (10-200 MPa).",
                     "hours": 340.0,
                     "cycles": 12400,
-                    "initial_hi": 91.5
+                    "initial_hi": 100.0
                 },
                 {
                     "code": "AZIMUTH",
@@ -131,7 +131,7 @@ def seed_database():
                     "description": "Turret rotational slew assembly, K1 contactor voltage (25-40V), and motor voltage (25-40V).",
                     "hours": 340.0,
                     "cycles": 12400,
-                    "initial_hi": 93.0
+                    "initial_hi": 100.0
                 }
             ]
 
@@ -216,76 +216,8 @@ def seed_database():
 
             db.commit()
 
-            # 4. Seed Alerts, Anomalies, and Maintenance events for rich initial visualization
-            recoil_sub = db.query(Subsystem).filter(Subsystem.code == "RECOIL").first()
-            lrf_sub = db.query(Subsystem).filter(Subsystem.code == "LRF").first()
-            tech_user = db.query(User).filter(User.username == "tech").first()
+            # Audit log entry for clean operational initialization
             admin_user = db.query(User).filter(User.username == "admin").first()
-
-            if recoil_sub and tech_user:
-                anom1 = AnomalyEvent(
-                    subsystem_id=recoil_sub.id,
-                    feature_name="recoil_distance",
-                    timestamp=now - timedelta(hours=2),
-                    severity="WARNING",
-                    anomaly_score=0.62,
-                    deviation_value=312.0,
-                    detection_method="Threshold Range Check (300-350 mm)",
-                    model_version="Threshold-v1.0",
-                    fault_diagnosis="Recoil Travel Warning (300-350 mm)",
-                    raw_context={"current_value": 312.0, "unit": "mm", "normal_range": "250-300 mm"}
-                )
-                db.add(anom1)
-                db.flush()
-
-                alert1 = Alert(
-                    subsystem_id=recoil_sub.id,
-                    feature_name="recoil_distance",
-                    timestamp=now - timedelta(hours=2),
-                    severity="WARNING",
-                    current_value=312.0,
-                    baseline_value=275.0,
-                    health_index_snapshot=88.5,
-                    probable_issue="Recoil distance reading 312.0 mm extended into warning threshold band (300-350 mm).",
-                    detection_method="Recoil Stroke Threshold Engine",
-                    status="ACTIVE",
-                    notes="Awaiting damper fluid and buffer seal inspection."
-                )
-                db.add(alert1)
-
-                maint1 = MaintenanceEvent(
-                    subsystem_id=recoil_sub.id,
-                    anomaly_id=anom1.id,
-                    event_type="INSPECTION",
-                    description="Scheduled recoil buffer stroke measurement and oil level inspection.",
-                    technician_id=tech_user.id,
-                    operating_hours=recoil_sub.operating_hours,
-                    operating_cycles=recoil_sub.operating_cycles,
-                    maintenance_priority="MEDIUM",
-                    recommendations="Inspect recoil buffer cylinder seals. Verify oil level in accumulator and confirm return stroke duration.",
-                    created_at=now - timedelta(hours=1)
-                )
-                db.add(maint1)
-
-            if lrf_sub and admin_user:
-                alert2 = Alert(
-                    subsystem_id=lrf_sub.id,
-                    feature_name="detector_voltage",
-                    timestamp=now - timedelta(hours=4),
-                    severity="WARNING",
-                    current_value=9.35,
-                    baseline_value=11.0,
-                    health_index_snapshot=93.2,
-                    probable_issue="LRF detector voltage at 9.35 V entered low warning band (9.0-9.5 V).",
-                    detection_method="Voltage Threshold Engine",
-                    status="ACKNOWLEDGED",
-                    acknowledged_by_id=tech_user.id if tech_user else None,
-                    acknowledged_at=now - timedelta(hours=3),
-                    notes="Acknowledged by technician. Power converter rail ripple to be verified."
-                )
-                db.add(alert2)
-
-            # Audit log entry
             audit1 = AuditLogEntry(
                 user_id=admin_user.id if admin_user else None,
                 username="admin",
@@ -293,12 +225,20 @@ def seed_database():
                 action="SYSTEM_INIT",
                 entity="Platform",
                 entity_id="ROOT",
-                description="Platform initialized with verified test-bench baseline signatures.",
+                description="Platform initialized with verified test-bench baseline signatures. Clean live telemetry mode active.",
                 ip_address="127.0.0.1"
             )
             db.add(audit1)
-
             db.commit()
+
+        # Clean up any legacy seeded demo alerts or demo anomalies from previous sessions
+        legacy_demo_alerts = db.query(Alert).filter(
+            Alert.probable_issue.like("%entered low warning band%") |
+            Alert.probable_issue.like("%extended into warning threshold band%")
+        ).all()
+        for da in legacy_demo_alerts:
+            db.delete(da)
+        db.commit()
 
     finally:
         db.close()

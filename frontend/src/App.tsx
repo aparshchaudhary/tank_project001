@@ -12,7 +12,6 @@ import { AlertsPage } from './pages/AlertsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { MaintenancePage } from './pages/MaintenancePage';
 import { ReportsPage } from './pages/ReportsPage';
-import { SimulatorPage } from './pages/SimulatorPage';
 import { ModelsRegistryPage } from './pages/ModelsRegistryPage';
 import { AdminPage } from './pages/AdminPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
@@ -130,8 +129,6 @@ const MainLayout: React.FC = () => {
           {currentTab === 'maintenance' && <MaintenancePage />}
 
           {currentTab === 'reports' && <ReportsPage />}
-
-          {currentTab === 'simulator' && <SimulatorPage />}
 
           {currentTab === 'models' && <ModelsRegistryPage />}
 

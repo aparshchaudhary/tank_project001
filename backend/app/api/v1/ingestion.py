@@ -87,8 +87,7 @@ def ingest_single_reading(
                 "status_band": "HEALTHY",
                 "features": telemetry_cache.get_features(subsystem.code),
                 "timestamp": datetime.now(timezone.utc).isoformat()
-            }],
-            "simulator_status": simulator_runner.get_status()
+            }]
         })
     except Exception:
         pass
@@ -228,8 +227,7 @@ def ingest_batch_readings(
         if telemetry_batch:
             simulator_runner.broadcast_telemetry({
                 "type": "TELEMETRY_UPDATE",
-                "batch": telemetry_batch,
-                "simulator_status": simulator_runner.get_status()
+                "batch": telemetry_batch
             })
     except Exception as ex:
         # Resilience safeguard: broadcast errors should never crash ingestion response

@@ -142,7 +142,6 @@ async def websocket_telemetry_endpoint(websocket: WebSocket):
         await websocket.send_text(json.dumps({
             "type": "HANDSHAKE",
             "message": "Connected to TURRET CBPM Real-Time Telemetry Stream",
-            "simulator_status": simulator_runner.get_status(),
             "batch": initial_batch
         }))
         while True:

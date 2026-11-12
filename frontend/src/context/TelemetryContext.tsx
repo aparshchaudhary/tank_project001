@@ -19,7 +19,6 @@ interface TelemetryContextType {
   simulatorStatus: SimulatorStatus | null;
   refreshSimulatorStatus: () => Promise<void>;
   refreshLatestTelemetry: () => Promise<void>;
-  triggerDemoMode: () => Promise<void>;
 }
 
 const TelemetryContext = createContext<TelemetryContextType | undefined>(undefined);
@@ -53,7 +52,7 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               subsystem_name: s.name,
               health_index: s.current_health_index,
               status_band: s.status_band || 'HEALTHY',
-              features: { ...(s.latest_features || {}), ...(existing?.features || {}) },
+              features: { ...(existing?.features || {}), ...(s.latest_features || {}) },
               timestamp: new Date().toISOString(),
             });
           });
@@ -65,18 +64,8 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  const triggerDemoMode = async () => {
-    try {
-      const status = await api.triggerDemoMode();
-      setSimulatorStatus(status);
-    } catch (e) {
-      console.error('Failed to launch demo mode', e);
-    }
-  };
-
   useEffect(() => {
     wsService.connect();
-    refreshSimulatorStatus();
     refreshLatestTelemetry();
 
     const unsubscribe = wsService.subscribe((data) => {
@@ -144,7 +133,6 @@ export const TelemetryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         simulatorStatus,
         refreshSimulatorStatus,
         refreshLatestTelemetry,
-        triggerDemoMode,
       }}
     >
       {children}
